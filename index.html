@@ -4,32 +4,26 @@
 <meta charset="UTF-8">
 <title>Enterprise Risk Dashboard</title>
 
-<!-- React -->
+<!-- ✅ React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-<!-- Babel -->
+<!-- ✅ Babel -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<!-- Recharts -->
-<script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
-
 <style>
-body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
-.sidebar { width:240px; background:#0f172a; color:white; padding:16px; }
-.sidebar button {
-  width:100%; padding:10px; margin-bottom:8px;
-  background:none; border:none; color:white;
-  text-align:left; cursor:pointer;
-}
-.sidebar button.active { background:#334155; }
-.content { flex:1; padding:24px; }
-table { width:100%; border-collapse:collapse; background:white; }
-th, td { border:1px solid #ddd; padding:8px; }
-th { background:#e5e7eb; }
-.badge-green { color:green; font-weight:bold; }
-.badge-yellow { color:orange; font-weight:bold; }
-.badge-red { color:red; font-weight:bold; }
+  body { margin:0; font-family: Arial; background:#f3f4f6; }
+  .layout { display:flex; min-height:100vh; }
+  .sidebar {
+    width:240px; background:#0f172a; color:white; padding:16px;
+  }
+  .sidebar button {
+    width:100%; padding:10px; margin-bottom:8px;
+    background:none; border:none; color:white;
+    text-align:left; cursor:pointer;
+  }
+  .sidebar button.active { background:#334155; }
+  .content { flex:1; padding:24px; }
 </style>
 </head>
 
@@ -37,165 +31,30 @@ th { background:#e5e7eb; }
 <div id="root"></div>
 
 <script type="text/babel">
-const {
-  BarChart, Bar, XAxis, YAxis,
-  Tooltip, ResponsiveContainer,
-  ScatterChart, Scatter
-} = Recharts;
-
-/* ================= MOCK DATA (แทน Sheet จริงได้ทันที) ================= */
-
-const planData = [
-  {
-    PlanName:"พัฒนา AI Use Case",
-    RF:"RF1",
-    Result:85,
-    Target:90,
-    Status:"เป็นไปตามแผน",
-    activities:[
-      {
-        order:1,
-        name:"ออกแบบ Use Case",
-        detail:"วิเคราะห์โจทย์ธุรกิจ",
-        problem:"ข้อมูลยังไม่ครบ",
-        solution:"ขอข้อมูลเพิ่ม"
-      }
-    ]
-  }
-];
-
-const kriData = [
-  { name:"AI Delay", value:60, RT:70, RA:85 },
-  { name:"Skill Gap", value:90, RT:70, RA:85 }
-];
-
-const responseData = [
-  { name:"AI Use Case", target:100, actual:85, percent:85 },
-  { name:"Training", target:100, actual:95, percent:95 }
-];
-
-const matrixPoints = {
-  pre:{ x:5, y:4 },
-  post:{ x:3, y:3 },
-  q1:{ x:2, y:2 }
-};
-
-/* ================= APP ================= */
-
-function App(){
-  const [tab,setTab] = React.useState("plan");
-  const [selectedPlan,setSelectedPlan] = React.useState(null);
+function App() {
+  const [tab, setTab] = React.useState("plan");
 
   return (
-    <div style={{display:"flex", minHeight:"100vh"}}>
+    <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        {["plan","kri","matrix","response"].map(t=>(
-          <button key={t}
-            className={tab===t?"active":""}
-            onClick={()=>{setTab(t); setSelectedPlan(null);}}>
-            {t.toUpperCase()}
-          </button>
-        ))}
+        <button className={tab==="plan"?"active":""} onClick={()=>setTab("plan")}>
+          Plan Report
+        </button>
+        <button className={tab==="kri"?"active":""} onClick={()=>setTab("kri")}>
+          KRI Report
+        </button>
+        <button className={tab==="matrix"?"active":""} onClick={()=>setTab("matrix")}>
+          Risk Matrix
+        </button>
+        <button className={tab==="response"?"active":""} onClick={()=>setTab("response")}>
+          Risk Response
+        </button>
       </div>
 
       <div className="content">
-
-{/* ================= PLAN REPORT ================= */}
-{tab==="plan" && (
-<>
-<h2>Plan Report</h2>
-
-{!selectedPlan ? (
-<table>
-<thead>
-<tr><th>แผน</th><th>RF</th><th>%</th><th>เป้า</th><th>สถานะ</th></tr>
-</thead>
-<tbody>
-{planData.map((p,i)=>(
-<tr key={i} onClick={()=>setSelectedPlan(p)} style={{cursor:"pointer"}}>
-<td>{p.PlanName}</td>
-<td>{p.RF}</td>
-<td>{p.Result}</td>
-<td>{p.Target}</td>
-<td>{p.Status}</td>
-</tr>
-))}
-</tbody>
-</table>
-) : (
-<>
-<button onClick={()=>setSelectedPlan(null)}>← กลับ</button>
-<h3>{selectedPlan.PlanName}</h3>
-{selectedPlan.activities.map((a,i)=>(
-<div key={i}>
-<p><b>{a.order}. {a.name}</b></p>
-<p>รายละเอียด: {a.detail}</p>
-<p>ปัญหา: {a.problem}</p>
-<p>แนวทางแก้: {a.solution}</p>
-</div>
-))}
-</>
-)}
-</>
-)}
-
-{/* ================= KRI REPORT ================= */}
-{tab==="kri" && (
-<>
-<h2>KRI Report</h2>
-{kriData.map((k,i)=>{
-const cls = k.value<k.RT?"badge-red":k.value<k.RA?"badge-yellow":"badge-green";
-return <p key={i} className={cls}>
-● {k.name}: {k.value}
-</p>;
-})}
-</>
-)}
-
-{/* ================= RISK MATRIX ================= */}
-{tab==="matrix" && (
-<>
-<h2>Risk Matrix</h2>
-<ResponsiveContainer width="100%" height={300}>
-<ScatterChart>
-<XAxis type="number" dataKey="x" domain={[1,5]} />
-<YAxis type="number" dataKey="y" domain={[1,5]} />
-<Scatter data={[matrixPoints.pre]} fill="black" />
-<Scatter data={[matrixPoints.post]} fill="blue" />
-<Scatter data={[matrixPoints.q1]} fill="purple" />
-</ScatterChart>
-</ResponsiveContainer>
-<p>● Pre | ▲ Post | ★ Quarterly</p>
-</>
-)}
-
-{/* ================= RISK RESPONSE ================= */}
-{tab==="response" && (
-<>
-<h2>Risk Response</h2>
-<ResponsiveContainer width="100%" height={300}>
-<BarChart data={responseData}>
-<XAxis dataKey="name" />
-<YAxis />
-<Tooltip />
-<Bar dataKey="target" fill="#64748b" />
-<Bar dataKey="actual" fill="#0f766e" />
-<Bar dataKey="percent" fill="#2563eb" />
-</BarChart>
-</ResponsiveContainer>
-
-<table>
-<thead><tr><th>กิจกรรม</th><th>%</th></tr></thead>
-<tbody>
-{responseData.map((r,i)=>(
-<tr key={i}><td>{r.name}</td><td>{r.percent}</td></tr>
-))}
-</tbody>
-</table>
-</>
-)}
-
+        <h2>{tab}</h2>
+        <p>✅ ถ้าเห็นอันนี้ แปลว่า React ทำงานสมบูรณ์แล้ว</p>
       </div>
     </div>
   );
@@ -203,5 +62,6 @@ return <p key={i} className={cls}>
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
+
 </body>
 </html>
