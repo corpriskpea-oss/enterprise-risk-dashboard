@@ -8,7 +8,7 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-  <!-- ✅ Babel (สำคัญมาก) -->
+  <!-- ✅ Babel: ให้ Browser อ่าน JSX ได้ -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <!-- ✅ Recharts -->
@@ -16,20 +16,22 @@
 
   <style>
     body { margin:0; font-family: Arial; background:#f3f4f6; }
-    .sidebar { width:240px; background:#0f172a; color:white; padding:16px; }
+    .sidebar {
+      width:240px; background:#0f172a; color:white; padding:16px;
+    }
     .sidebar button {
       width:100%; padding:10px; margin-bottom:8px;
       background:none; border:none; color:white; text-align:left;
+      cursor:pointer;
     }
     .sidebar button.active { background:#334155; }
-    .content { padding:24px; flex:1; }
+    .content { flex:1; padding:24px; }
   </style>
 </head>
 
 <body>
 <div id="root"></div>
 
-<!-- ✅ React code ต้องอยู่ใน type="text/babel" -->
 <script type="text/babel">
 
 const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } = Recharts;
@@ -41,10 +43,18 @@ function App() {
     <div style={{display:"flex", minHeight:"100vh"}}>
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button onClick={()=>setTab("plan")}>Plan Report</button>
-        <button onClick={()=>setTab("kri")}>KRI Report</button>
-        <button onClick={()=>setTab("matrix")}>Risk Matrix</button>
-        <button onClick={()=>setTab("response")}>Risk Response</button>
+        <button className={tab==="plan"?"active":""} onClick={()=>setTab("plan")}>
+          Plan Report
+        </button>
+        <button className={tab==="kri"?"active":""} onClick={()=>setTab("kri")}>
+          KRI Report
+        </button>
+        <button className={tab==="matrix"?"active":""} onClick={()=>setTab("matrix")}>
+          Risk Matrix
+        </button>
+        <button className={tab==="response"?"active":""} onClick={()=>setTab("response")}>
+          Risk Response
+        </button>
       </div>
 
       <div className="content">
@@ -53,17 +63,20 @@ function App() {
             <h2>Risk Response</h2>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={[
-                { name:"AI Use Case", target:100, actual:85, percent:85 }
+                { name:"AI Use Case", target:100, actual:85 }
               ]}>
-                <XAxis dataKey="name"/>
-                <YAxis/>
-                <Tooltip/>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
                 <Bar dataKey="target" fill="#64748b" />
                 <Bar dataKey="actual" fill="#0f766e" />
-                <Bar dataKey="percent" fill="#2563eb" />
               </BarChart>
             </ResponsiveContainer>
           </>
+        )}
+
+        {tab !== "response" && (
+          <h2>{tab} (Demo)</h2>
         )}
       </div>
     </div>
