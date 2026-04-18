@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Enterprise Risk Dashboard</title>
 
 <!-- ✅ React -->
@@ -36,11 +36,10 @@
 
 <script type="text/babel">
 
-/* ================== Hook: ดึงข้อมูล Plan จาก Google Sheet ================== */
+/* ================== ดึงข้อมูล Plan จาก Google Sheet ================== */
 function usePlanData() {
   const [plans, setPlans] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
 
   React.useEffect(() => {
     const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
@@ -48,10 +47,7 @@ function usePlanData() {
       `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
 
     fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error("โหลดข้อมูลไม่ได้");
-        return res.text();
-      })
+      .then(res => res.text())
       .then(csv => {
         const lines = csv.trim().split("\n");
         const headers = lines[0].split(",");
@@ -70,18 +66,17 @@ function usePlanData() {
       })
       .catch(err => {
         console.error(err);
-        setError("เกิดข้อผิดพลาดในการโหลดข้อมูล");
         setLoading(false);
       });
   }, []);
 
-  return { plans, loading, error };
+  return { plans, loading };
 }
 
 /* ================== App ================== */
 function App() {
   const [tab, setTab] = React.useState("plan");
-  const { plans, loading, error } = usePlanData();
+  const { plans, loading } = usePlanData();
 
   return (
     <div className="layout">
@@ -93,44 +88,36 @@ function App() {
         >
           Plan Report
         </button>
-        <button disabled>KRI Report</button>
-        <button disabled>Risk Matrix</button>
-        <button disabled>Risk Response</button>
       </div>
 
       <div className="content">
-        {tab === "plan" && (
-          <>
-            <h2>Plan Report</h2>
+        <h2>Plan Report</h2>
 
-            {loading && <p>กำลังโหลดข้อมูลจาก Google Sheet...</p>}
-            {error && <p style={{color:"red"}}>{error}</p>}
-
-            {!loading && !error && (
-              <table>
-                <thead>
-                  <tr>
-                    <th>แผนงาน</th>
-                    <th>RF Group</th>
-                    <th>ผลการดำเนินงาน (%)</th>
-                    <th>เป้าหมาย</th>
-                    <th>สถานะ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {plans.map((p, i) => (
-                    <tr key={i}>
-                      <td>{p.PlanName}</td>
-                      <td>{p.RF_GroupName}</td>
-                      <td>{p.ResultPercent}</td>
-                      <td>{p.TargetLevel5}</td>
-                      <td>{p.Status_Combined}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </>
+        {loading ? (
+          <p>กำลังโหลดข้อมูล...</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>แผนงาน</th>
+                <th>RF Group</th>
+                <th>ผลการดำเนินงาน (%)</th>
+                <th>เป้าหมาย</th>
+                <th>สถานะ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plans.map((p, i) => (
+                <tr key={i}>
+                  <td>{p.PlanName}</td>
+                  <td>{p.RF_GroupName}</td>
+                  <td>{p.ResultPercent}</td>
+                  <td>{p.TargetLevel5}</td>
+                  <td>{p.Status_Combined}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
