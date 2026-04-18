@@ -1,96 +1,11 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard</title>
-
-<!-- ✅ React -->
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
-<!-- ✅ Babel: ให้ browser อ่าน JSX -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-<!-- ✅ Recharts -->
-<script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
-
-<style>
-  body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
-  .sidebar { width:240px; background:#0f172a; color:white; padding:16px; }
-  .sidebar button {
-    width:100%;
-    padding:10px;
-    margin-bottom:8px;
-    background:none;
-    color:white;
-    border:none;
-    text-align:left;
-    cursor:pointer;
-  }
-  .sidebar button.active { background:#334155; }
-  .content { flex:1; padding:24px; }
-</style>
+  <meta charset="UTF-8">
+  <title>Test Page</title>
 </head>
-
 <body>
-<div id="root"></div>
-
-<script type="text/babel">
-const {
-  BarChart, Bar, XAxis, YAxis,
-  Tooltip, ResponsiveContainer
-} = Recharts;
-
-function App() {
-  const [tab, setTab] = React.useState("response");
-
-  return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <div className="sidebar">
-        <h3>Enterprise Risk</h3>
-        <button className={tab==="plan"?"active":""} onClick={()=>setTab("plan")}>
-          Plan Report
-        </button>
-        <button className={tab==="kri"?"active":""} onClick={()=>setTab("kri")}>
-          KRI Report
-        </button>
-        <button className={tab==="matrix"?"active":""} onClick={()=>setTab("matrix")}>
-          Risk Matrix
-        </button>
-        <button className={tab==="response"?"active":""} onClick={()=>setTab("response")}>
-          Risk Response
-        </button>
-      </div>
-
-      <div className="content">
-        {tab === "response" && (
-          <>
-            <h2>Risk Response</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={[
-                { name: "AI Use Case", target: 100, actual: 85 },
-                { name: "Training", target: 100, actual: 95 }
-              ]}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="target" fill="#64748b" />
-                <Bar dataKey="actual" fill="#0f766e" />
-              </BarChart>
-            </ResponsiveContainer>
-          </>
-        )}
-
-        {tab !== "response" && (
-          <h2>{tab} (demo)</h2>
-        )}
-      </div>
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-</script>
+  <h1>✅ GitHub Pages ทำงานแล้ว</h1>
+  <p>ถ้าคุณเห็นข้อความนี้ แปลว่า index.html ถูกโหลดจริง</p>
 </body>
 </html>
-``
