@@ -2,10 +2,14 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>Test Page</title>
+  <title>JS Test</title>
 </head>
 <body>
-  <h1>✅ GitHub Pages ทำงานแล้ว</h1>
-  <p>ถ้าคุณเห็นข้อความนี้ แปลว่า index.html ถูกโหลดจริง</p>
+  <h1 id="msg">ยังไม่รัน JS</h1>
+
+  <script>
+    document.getElementById("msg").innerText = "✅ JavaScript ทำงานแล้ว";
+    console.log("JS OK");
+  </script>
 </body>
 </html>
