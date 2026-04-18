@@ -5,14 +5,14 @@
 <title>Enterprise Risk Dashboard</title>
 
 <!-- ✅ React -->
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.de/script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
 <!-- ✅ Babel -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <style>
-  body { margin:0; font-family: Arial; background:#f3f4f6; }
+  body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
   .layout { display:flex; min-height:100vh; }
   .sidebar {
     width:240px; background:#0f172a; color:white; padding:16px;
@@ -23,7 +23,11 @@
     text-align:left; cursor:pointer;
   }
   .sidebar button.active { background:#334155; }
-  .content { flex:1; padding:24px; }
+  .content { flex:1; padding:24px; background:#fff; }
+
+  table { width:100%; border-collapse:collapse; margin-top:12px; }
+  th, td { border:1px solid #ddd; padding:8px; }
+  th { background:#e5e7eb; }
 </style>
 </head>
 
@@ -31,37 +35,110 @@
 <div id="root"></div>
 
 <script type="text/babel">
+
+/* ================== Hook: ดึงข้อมูล Plan จาก Google Sheet ================== */
+function usePlanData() {
+  const [plans, setPlans] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() => {
+    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
+    const url =
+      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error("โหลดข้อมูลไม่ได้");
+        return res.text();
+      })
+      .then(csv => {
+        const lines = csv.trim().split("\n");
+        const headers = lines[0].split(",");
+
+        const data = lines.slice(1).map(row => {
+          const cols = row.split(",");
+          const obj = {};
+          headers.forEach((h, i) => {
+            obj[h.trim()] = cols[i]?.trim();
+          });
+          return obj;
+        });
+
+        setPlans(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setError("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+        setLoading(false);
+      });
+  }, []);
+
+  return { plans, loading, error };
+}
+
+/* ================== App ================== */
 function App() {
   const [tab, setTab] = React.useState("plan");
+  const { plans, loading, error } = usePlanData();
 
   return (
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button className={tab==="plan"?"active":""} onClick={()=>setTab("plan")}>
+        <button
+          className={tab==="plan"?"active":""}
+          onClick={()=>setTab("plan")}
+        >
           Plan Report
         </button>
-        <button className={tab==="kri"?"active":""} onClick={()=>setTab("kri")}>
-          KRI Report
-        </button>
-        <button className={tab==="matrix"?"active":""} onClick={()=>setTab("matrix")}>
-          Risk Matrix
-        </button>
-        <button className={tab==="response"?"active":""} onClick={()=>setTab("response")}>
-          Risk Response
-        </button>
+        <button disabled>KRI Report</button>
+        <button disabled>Risk Matrix</button>
+        <button disabled>Risk Response</button>
       </div>
 
       <div className="content">
-        <h2>{tab}</h2>
-        <p>✅ ถ้าเห็นอันนี้ แปลว่า React ทำงานสมบูรณ์แล้ว</p>
+        {tab === "plan" && (
+          <>
+            <h2>Plan Report</h2>
+
+            {loading && <p>กำลังโหลดข้อมูลจาก Google Sheet...</p>}
+            {error && <p style={{color:"red"}}>{error}</p>}
+
+            {!loading && !error && (
+              <table>
+                <thead>
+                  <tr>
+                    <th>แผนงาน</th>
+                    <th>RF Group</th>
+                    <th>ผลการดำเนินงาน (%)</th>
+                    <th>เป้าหมาย</th>
+                    <th>สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {plans.map((p, i) => (
+                    <tr key={i}>
+                      <td>{p.PlanName}</td>
+                      <td>{p.RF_GroupName}</td>
+                      <td>{p.ResultPercent}</td>
+                      <td>{p.TargetLevel5}</td>
+                      <td>{p.Status_Combined}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-</script>
 
+</script>
 </body>
 </html>
