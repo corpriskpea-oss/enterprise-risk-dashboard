@@ -1,1 +1,260 @@
+import { useState } from "react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  ScatterChart, Scatter, Line
+} from "recharts";
 
+/* ======================= MOCK DATA ======================= */
+
+const planData = [
+  {
+    PlanName: "แผนพัฒนา AI Use Case",
+    RF_GroupName: "RF1",
+    ResultPercent: 85,
+    TargetLevel5: 90,
+    Status: "เป็นไปตามแผน",
+    activities: [
+      {
+        order: 1,
+        name: "ออกแบบ Use Case",
+        Q1: {
+          detail: "วิเคราะห์ Use Case",
+          problem: "ข้อมูลจากบางหน่วยงานไม่ครบ",
+          solution: "ขอข้อมูลเพิ่มเติม"
+        }
+      }
+    ]
+  },
+  {
+    PlanName: "แผน Net Zero",
+    RF_GroupName: "RF3",
+    ResultPercent: 60,
+    TargetLevel5: 80,
+    Status: "เฝ้าระวัง",
+    activities: []
+  }
+];
+
+const kriData = [
+  { RF: "RF1", name: "AI Project Delay", status: 60, RT: 70, RA: 85 },
+  { RF: "RF2", name: "Digital Skill Gap", status: 90, RT: 70, RA: 85 }
+];
+
+const riskResponseData = [
+  {
+    RF: "RF1",
+    name: "พัฒนา AI Use Case",
+    weight: 20,
+    target: 100,
+    actual: 85,
+    q1Target: 30,
+    q1Actual: 28,
+    percent: 85
+  },
+  {
+    RF: "RF1",
+    name: "อบรมบุคลากร",
+    weight: 10,
+    target: 100,
+    actual: 95,
+    q1Target: 25,
+    q1Actual: 25,
+    percent: 95
+  }
+];
+
+const matrixPoints = {
+  pre: { x: 5, y: 4 },
+  post: { x: 3, y: 3 },
+  q1: { x: 2, y: 2 }
+};
+
+/* ======================= COMPONENT ======================= */
+
+export default function EnterpriseRiskDashboard() {
+  const [tab, setTab] = useState("plan");
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      {/* ================= SIDEBAR ================= */}
+      <aside className="w-64 bg-slate-900 text-white p-4">
+        <h1 className="text-lg font-bold mb-6">Enterprise Risk</h1>
+        {[
+          ["plan", "Plan Report"],
+          ["kri", "KRI Report"],
+          ["matrix", "Risk Matrix"],
+          ["response", "Risk Response"]
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`block w-full text-left px-4 py-2 rounded mb-2 ${
+              tab === id ? "bg-slate-700" : "hover:bg-slate-800"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </aside>
+
+      {/* ================= CONTENT ================= */}
+      <main className="flex-1 p-6 space-y-6">
+
+        {/* ================= PLAN REPORT ================= */}
+        {tab === "plan" && (
+          <>
+            <h2 className="text-xl font-bold">Plan Report</h2>
+            {!selectedPlan ? (
+              <table className="w-full bg-white">
+                <thead>
+                  <tr className="bg-gray-200">
+                    <th>Plan</th>
+                    <th>RF</th>
+                    <th>% ผล</th>
+                    <th>เป้า</th>
+                    <th>สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {planData.map((p, i) => (
+                    <tr key={i} onClick={() => setSelectedPlan(p)}
+                        className="cursor-pointer hover:bg-gray-100">
+                      <td>{p.PlanName}</td>
+                      <td>{p.RF_GroupName}</td>
+                      <td>{p.ResultPercent}</td>
+                      <td>{p.TargetLevel5}</td>
+                      <td>{p.Status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <>
+                <button
+                  className="text-blue-600 underline"
+                  onClick={() => setSelectedPlan(null)}
+                >
+                  ← กลับ
+                </button>
+                <h3 className="font-semibold mt-4">
+                  {selectedPlan.PlanName}
+                </h3>
+                {selectedPlan.activities.map((a, i) => (
+                  <div key={i} className="bg-white p-4 mt-3">
+                    <p><b>{a.order}. {a.name}</b></p>
+                    <p>รายละเอียด: {a.Q1.detail}</p>
+                    <p>ปัญหา: {a.Q1.problem}</p>
+                    <p>แนวทางแก้ไข: {a.Q1.solution}</p>
+                  </div>
+                ))}
+              </>
+            )}
+          </>
+        )}
+
+        {/* ================= KRI REPORT ================= */}
+        {tab === "kri" && (
+          <>
+            <h2 className="text-xl font-bold">KRI Report</h2>
+            {kriData.map((k, i) => {
+              const color =
+                k.status < k.RT ? "red" :
+                k.status < k.RA ? "orange" : "green";
+              return (
+                <div key={i} className="bg-white p-4 mb-3">
+                  <h3>{k.name}</h3>
+                  <div style={{ color, fontSize: 24 }}>
+                    ● {k.status}
+                  </div>
+                  <p>RT: {k.RT} | RA: {k.RA}</p>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {/* ================= RISK MATRIX ================= */}
+        {tab === "matrix" && (
+          <>
+            <h2 className="text-xl font-bold">Risk Matrix</h2>
+            <ResponsiveContainer width="100%" height={400}>
+              <ScatterChart>
+                <XAxis type="number" dataKey="x" domain={[1,5]} />
+                <YAxis type="number" dataKey="y" domain={[1,5]} />
+                <Scatter
+                  data={[matrixPoints.pre]}
+                  fill="black"
+                  shape="circle"
+                />
+                <Scatter
+                  data={[matrixPoints.post]}
+                  fill="blue"
+                  shape="triangle"
+                />
+                <Scatter
+                  data={[matrixPoints.q1]}
+                  fill="purple"
+                  shape="star"
+                />
+                <Line
+                  data={[
+                    { ...matrixPoints.pre, z: 1 },
+                    { ...matrixPoints.q1, z: 1 }
+                  ]}
+                  dataKey="y"
+                  stroke="purple"
+                />
+              </ScatterChart>
+            </ResponsiveContainer>
+            <p className="mt-2">
+              ● = Pre | ▲ = Post | ★ = L×I (รายไตรมาส)
+            </p>
+          </>
+        )}
+
+        {/* ================= RISK RESPONSE ================= */}
+        {tab === "response" && (
+          <>
+            <h2 className="text-xl font-bold">Risk Response</h2>
+
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={riskResponseData}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="target" fill="#64748b" />
+                <Bar dataKey="actual" fill="#0f766e" />
+                <Bar dataKey="percent" fill="#2563eb" />
+              </BarChart>
+            </ResponsiveContainer>
+
+            <table className="w-full bg-white mt-4">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th>กิจกรรม</th>
+                  <th>น้ำหนัก</th>
+                  <th>เป้า</th>
+                  <th>ผล</th>
+                  <th>%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {riskResponseData.map((r, i) => (
+                  <tr key={i}>
+                    <td>{r.name}</td>
+                    <td>{r.weight}</td>
+                    <td>{r.target}</td>
+                    <td>{r.actual}</td>
+                    <td>{r.percent}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+``
