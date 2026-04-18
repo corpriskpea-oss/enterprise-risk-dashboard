@@ -4,19 +4,16 @@
 <meta charset="UTF-8">
 <title>Enterprise Risk Dashboard</title>
 
-<!-- React -->
-<script src="https://unpkg.com/react@18/umd/react.developmentrc="https://unpkg.com/react-dom@18/umd/react-dom.de
-<!-- Babel -->
-<script src="https://unpkg.com/@babel/standin.js</script>
+<!-- ✅ React -->
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-<!-- Recharts -->
-<script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+<!-- ✅ Babel -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <style>
   body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
-  .sidebar {
-    width:240px; background:#0f172a; color:white; padding:16px;
-  }
+  .sidebar { width:240px; background:#0f172a; color:white; padding:16px; }
   .sidebar button {
     width:100%; padding:10px; margin-bottom:8px;
     background:none; border:none; color:white;
@@ -24,9 +21,6 @@
   }
   .sidebar button.active { background:#334155; }
   .content { flex:1; padding:24px; }
-  table { width:100%; border-collapse:collapse; background:white; }
-  th, td { border:1px solid #ddd; padding:8px; }
-  th { background:#e5e7eb; }
 </style>
 </head>
 
@@ -34,26 +28,6 @@
 <div id="root"></div>
 
 <script type="text/babel">
-
-const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } = Recharts;
-
-/* ===== MOCK DATA ===== */
-const planData = [
-  { name:"แผน AI", rf:"RF1", percent:85, target:90, status:"เป็นไปตามแผน" },
-  { name:"แผน Net Zero", rf:"RF3", percent:60, target:80, status:"เฝ้าระวัง" }
-];
-
-const kriData = [
-  { name:"AI Delay", value:60, RT:70, RA:85 },
-  { name:"Skill Gap", value:90, RT:70, RA:85 }
-];
-
-const responseData = [
-  { name:"AI Use Case", target:100, actual:85, percent:85 },
-  { name:"Training", target:100, actual:95, percent:95 }
-];
-
-/* ===== APP ===== */
 function App() {
   const [tab, setTab] = React.useState("plan");
 
@@ -61,46 +35,31 @@ function App() {
     <div style={{display:"flex", minHeight:"100vh"}}>
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button className={tab==="plan"?"active":""} onClick={()=>setTab("plan")}>Plan Report</button>
-        <button className={tab==="kri"?"active":""} onClick={()=>setTab("kri")}>KRI Report</button>
-        <button className={tab==="matrix"?"active":""} onClick={()=>setTab("matrix")}>Risk Matrix</button>
-        <button className={tab==="response"?"active":""} onClick={()=>setTab("response")}>Risk Response</button>
+        <button className={tab==="plan"?"active":""} onClick={()=>setTab("plan")}>
+          Plan Report
+        </button>
+        <button className={tab==="kri"?"active":""} onClick={()=>setTab("kri")}>
+          KRI Report
+        </button>
+        <button className={tab==="matrix"?"active":""} onClick={()=>setTab("matrix")}>
+          Risk Matrix
+        </button>
+        <button className={tab==="response"?"active":""} onClick={()=>setTab("response")}>
+          Risk Response
+        </button>
       </div>
 
       <div className="content">
+        <h2>{tab}</h2>
+        <p>✅ หน้าไม่ว่างแล้ว</p>
+      </div>
+    </div>
+  );
+}
 
-        {tab==="plan" && (
-          <>
-            <h2>Plan Report</h2>
-            <table>
-              <thead>
-                <tr><th>แผน</th><th>RF</th><th>%</th><th>เป้า</th><th>สถานะ</th></tr>
-              </thead>
-              <tbody>
-                {planData.map((p,i)=>(
-                  <tr key={i}>
-                    <td>{p.name}</td>
-                    <td>{p.rf}</td>
-                    <td>{p.percent}</td>
-                    <td>{p.target}</td>
-                    <td>{p.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
 
-        {tab==="kri" && (
-          <>
-            <h2>KRI Report</h2>
-            {kriData.map((k,i)=>{
-              const color = k.value<k.RT?"red":k.value<k.RA?"orange":"green";
-              return <p key={i} style={{color}}>● {k.name} : {k.value}</p>;
-            })}
-          </>
-        )}
-
-        {tab==="matrix" && (
-          <>
-            <h2>Risk Matrix</h2>
+</body>
+</html>
