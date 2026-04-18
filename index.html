@@ -2,32 +2,71 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard</title>
+<title>Enterprise Risk Dashboard – v1.0.1 (Plan)</title>
 
 <!-- ✅ React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-<!-- ✅ Babel (ให้ Browser อ่าน JSX) -->
+<!-- ✅ Babel (เพื่อใช้ JSX ในไฟล์เดียว) -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+<!-- ✅ PapaParse (CSV parser ที่รองรับ , ในข้อความ) -->
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
 <style>
-  body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
-  .layout { display:flex; min-height:100vh; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f3f4f6;
+  }
+  .layout {
+    display: flex;
+    min-height: 100vh;
+  }
   .sidebar {
-    width:240px; background:#0f172a; color:white; padding:16px;
+    width: 240px;
+    background: #0f172a;
+    color: white;
+    padding: 16px;
+  }
+  .sidebar h3 {
+    margin-top: 0;
   }
   .sidebar button {
-    width:100%; padding:10px; margin-bottom:8px;
-    background:none; border:none; color:white;
-    text-align:left; cursor:pointer;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: none;
+    border: none;
+    color: white;
+    text-align: left;
+    cursor: pointer;
   }
-  .sidebar button.active { background:#334155; }
-  .content { flex:1; padding:24px; background:#fff; }
-
-  table { width:100%; border-collapse:collapse; margin-top:12px; }
-  th, td { border:1px solid #ddd; padding:8px; }
-  th { background:#e5e7eb; }
+  .sidebar button.active {
+    background: #334155;
+  }
+  .content {
+    flex: 1;
+    padding: 24px;
+    background: white;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+  th {
+    background: #e5e7eb;
+    text-align: center;
+  }
+  td {
+    vertical-align: top;
+  }
 </style>
 </head>
 
@@ -35,7 +74,10 @@
 <div id="root"></div>
 
 <script type="text/babel">
-/* ================== Google Sheet Plan ================== */
+
+/* =========================================================
+   v1.0.1 : usePlanData (แก้ CSV column เลื่อน)
+   ========================================================= */
 function usePlanData() {
   const [plans, setPlans] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -43,29 +85,31 @@ function usePlanData() {
 
   React.useEffect(() => {
     const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
+    const sheetName = "Plan";
+
     const url =
-      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
+      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=${sheetName}`;
 
     fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error("โหลด CSV ไม่ได้");
-        return res.text();
-      })
+      .then(res => res.text())
       .then(csv => {
-        const lines = csv.trim().split("\n");
-        const headers = lines[0].split(",");
-        const data = lines.slice(1).map(row => {
-          const cols = row.split(",");
-          const obj = {};
-          headers.forEach((h, i) => obj[h.trim()] = cols[i]?.trim());
-          return obj;
+        const parsed = Papa.parse(csv, {
+          header: true,
+          skipEmptyLines: true,
         });
-        setPlans(data);
+
+        if (parsed.errors.length > 0) {
+          console.error(parsed.errors);
+          setError("เกิดข้อผิดพลาดในการอ่าน CSV");
+        } else {
+          setPlans(parsed.data);
+        }
+
         setLoading(false);
       })
       .catch(err => {
         console.error(err);
-        setError("โหลดข้อมูลไม่สำเร็จ (ตรวจการ Share/ชื่อชีต)");
+        setError("ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้");
         setLoading(false);
       });
   }, []);
@@ -73,7 +117,9 @@ function usePlanData() {
   return { plans, loading, error };
 }
 
-/* ================== App ================== */
+/* =========================================================
+   App — v1.0.1 (Plan Report)
+   ========================================================= */
 function App() {
   const [tab, setTab] = React.useState("plan");
   const { plans, loading, error } = usePlanData();
@@ -82,8 +128,11 @@ function App() {
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button className={tab==="plan"?"active":""} onClick={()=>setTab("plan")}>
-          Plan Report
+        <button
+          className={tab === "plan" ? "active" : ""}
+          onClick={() => setTab("plan")}
+        >
+          Plan Report (v1.0.1)
         </button>
       </div>
 
@@ -91,7 +140,7 @@ function App() {
         <h2>Plan Report</h2>
 
         {loading && <p>กำลังโหลดข้อมูลจาก Google Sheet…</p>}
-        {error && <p style={{color:"red"}}>{error}</p>}
+        {error && <p style={{ color: "red" }}>{error}</p>}
 
         {!loading && !error && (
           <table>
@@ -108,9 +157,15 @@ function App() {
               {plans.map((p, i) => (
                 <tr key={i}>
                   <td>{p.PlanName}</td>
-                  <td>{p.RF_GroupName}</td>
-                  <td>{p.ResultPercent}</td>
-                  <td>{p.TargetLevel5}</td>
+                  <td style={{ textAlign: "center" }}>
+                    {p.RF_GroupName}
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    {p.ResultPercent}
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    {p.TargetLevel5}
+                  </td>
                   <td>{p.Status_Combined}</td>
                 </tr>
               ))}
@@ -124,8 +179,7 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);
-</script>
 
+</script>
 </body>
 </html>
-``
