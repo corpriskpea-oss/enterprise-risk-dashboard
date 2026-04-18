@@ -1,15 +1,26 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>JS Test</title>
+<meta charset="UTF-8">
+<title>React Test</title>
 </head>
 <body>
-  <h1 id="msg">ยังไม่รัน JS</h1>
 
-  <script>
-    document.getElementById("msg").innerText = "✅ JavaScript ทำงานแล้ว";
-    console.log("JS OK");
-  </script>
+<div id="root"></div>
+
+<!-- ✅ React (ต้องเป็น src แบบนี้เท่านั้น) -->
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+function App() {
+  return <h1>✅ React แสดงผลได้แล้ว</h1>;
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+
 </body>
 </html>
