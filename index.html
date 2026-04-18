@@ -2,71 +2,42 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v1.0.1 (Plan)</title>
+<title>Enterprise Risk Dashboard – v1.0.2 (Plan)</title>
 
-<!-- ✅ React -->
+<!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-<!-- ✅ Babel (เพื่อใช้ JSX ในไฟล์เดียว) -->
+<!-- Babel -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<!-- ✅ PapaParse (CSV parser ที่รองรับ , ในข้อความ) -->
+<!-- PapaParse -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f3f4f6;
-  }
-  .layout {
-    display: flex;
-    min-height: 100vh;
-  }
+  body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+  .layout { display:flex; min-height:100vh; }
   .sidebar {
-    width: 240px;
-    background: #0f172a;
-    color: white;
-    padding: 16px;
-  }
-  .sidebar h3 {
-    margin-top: 0;
+    width:240px; background:#0f172a; color:white; padding:16px;
   }
   .sidebar button {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 8px;
-    background: none;
-    border: none;
-    color: white;
-    text-align: left;
-    cursor: pointer;
+    width:100%; padding:10px; margin-bottom:8px;
+    background:none; border:none; color:white;
+    text-align:left; cursor:pointer;
   }
-  .sidebar button.active {
-    background: #334155;
+  .sidebar button.active { background:#334155; }
+
+  .content { flex:1; padding:24px; background:white; }
+
+  table { width:100%; border-collapse:collapse; margin-top:12px; }
+  th, td { border:1px solid #ddd; padding:8px; vertical-align:top; }
+  th { background:#e5e7eb; text-align:center; }
+
+  select, button {
+    padding:6px 10px; margin-right:8px;
   }
-  .content {
-    flex: 1;
-    padding: 24px;
-    background: white;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 12px;
-  }
-  th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-  }
-  th {
-    background: #e5e7eb;
-    text-align: center;
-  }
-  td {
-    vertical-align: top;
-  }
+
+  .toolbar { margin-bottom:12px; }
 </style>
 </head>
 
@@ -75,20 +46,15 @@
 
 <script type="text/babel">
 
-/* =========================================================
-   v1.0.1 : usePlanData (แก้ CSV column เลื่อน)
-   ========================================================= */
+/* ==================== Data Hook ==================== */
 function usePlanData() {
-  const [plans, setPlans] = React.useState([]);
+  const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
 
   React.useEffect(() => {
     const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
-    const sheetName = "Plan";
-
     const url =
-      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=${sheetName}`;
+      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
 
     fetch(url)
       .then(res => res.text())
@@ -97,88 +63,155 @@ function usePlanData() {
           header: true,
           skipEmptyLines: true,
         });
-
-        if (parsed.errors.length > 0) {
-          console.error(parsed.errors);
-          setError("เกิดข้อผิดพลาดในการอ่าน CSV");
-        } else {
-          setPlans(parsed.data);
-        }
-
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setError("ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้");
+        setRows(parsed.data);
         setLoading(false);
       });
   }, []);
 
-  return { plans, loading, error };
+  return { rows, loading };
 }
 
-/* =========================================================
-   App — v1.0.1 (Plan Report)
-   ========================================================= */
+/* ==================== App ==================== */
 function App() {
-  const [tab, setTab] = React.useState("plan");
-  const { plans, loading, error } = usePlanData();
+  const { rows, loading } = usePlanData();
+
+  const [rfFilter, setRfFilter] = React.useState("ALL");
+  const [selectedPlan, setSelectedPlan] = React.useState(null);
+  const [quarter, setQuarter] = React.useState("Q1");
+
+  /* ---------- RF list ---------- */
+  const rfList = React.useMemo(() => {
+    const set = new Set(rows.map(r => r.RF_GroupName));
+    return ["ALL", ...Array.from(set)];
+  }, [rows]);
+
+  /* ---------- Group by Plan ---------- */
+  const planGroups = React.useMemo(() => {
+    const map = {};
+    rows.forEach(r => {
+      if (rfFilter !== "ALL" && r.RF_GroupName !== rfFilter) return;
+      if (!map[r.PlanName]) map[r.PlanName] = [];
+      map[r.PlanName].push(r);
+    });
+    return map;
+  }, [rows, rfFilter]);
+
+  /* ---------- Quarter field names ---------- */
+  const detailKey = `${quarter}_Detail`;
+  const problemKey = `${quarter}_Problem`;
+  const solutionKey = `${quarter}_Solution`;
 
   return (
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button
-          className={tab === "plan" ? "active" : ""}
-          onClick={() => setTab("plan")}
-        >
-          Plan Report (v1.0.1)
-        </button>
+        <button className="active">Plan Report v1.0.2</button>
       </div>
 
       <div className="content">
         <h2>Plan Report</h2>
 
-        {loading && <p>กำลังโหลดข้อมูลจาก Google Sheet…</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {loading && <p>กำลังโหลดข้อมูล…</p>}
 
-        {!loading && !error && (
-          <table>
-            <thead>
-              <tr>
-                <th>แผนงาน</th>
-                <th>RF Group</th>
-                <th>ผลการดำเนินงาน (%)</th>
-                <th>เป้าหมาย</th>
-                <th>สถานะ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map((p, i) => (
-                <tr key={i}>
-                  <td>{p.PlanName}</td>
-                  <td style={{ textAlign: "center" }}>
-                    {p.RF_GroupName}
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    {p.ResultPercent}
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    {p.TargetLevel5}
-                  </td>
-                  <td>{p.Status_Combined}</td>
+        {!loading && !selectedPlan && (
+          <>
+            {/* ---------- RF Filter ---------- */}
+            <div className="toolbar">
+              <label>RF Group: </label>
+              <select
+                value={rfFilter}
+                onChange={e => setRfFilter(e.target.value)}
+              >
+                {rfList.map(rf => (
+                  <option key={rf} value={rf}>{rf}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* ---------- Plan Summary Table ---------- */}
+            <table>
+              <thead>
+                <tr>
+                  <th>แผนงาน</th>
+                  <th>RF</th>
+                  <th>ผลการดำเนินงาน (%)</th>
+                  <th>เป้าหมาย</th>
+                  <th>สถานะ</th>
                 </tr>
+              </thead>
+              <tbody>
+                {Object.entries(planGroups).map(([planName, items]) => {
+                  const p = items[0];
+                  return (
+                    <tr key={planName}
+                        style={{ cursor:"pointer" }}
+                        onClick={() => setSelectedPlan({ name: planName, items })}>
+                      <td>{planName}</td>
+                      <td style={{ textAlign:"center" }}>{p.RF_GroupName}</td>
+                      <td style={{ textAlign:"center" }}>{p.ResultPercent}</td>
+                      <td style={{ textAlign:"center" }}>{p.TargetLevel5}</td>
+                      <td>{p.Status_Combined}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* ==================== Drill-down ==================== */}
+        {selectedPlan && (
+          <>
+            <button onClick={() => setSelectedPlan(null)}>← กลับ</button>
+            <h3>{selectedPlan.name}</h3>
+
+            {/* Quarter Filter */}
+            <div className="toolbar">
+              <label>ไตรมาส: </label>
+              {["Q1","Q2","Q3","Q4"].map(q => (
+                <button
+                  key={q}
+                  onClick={() => setQuarter(q)}
+                  style={{
+                    fontWeight: quarter === q ? "bold" : "normal"
+                  }}
+                >
+                  {q}
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            {/* Activity Table */}
+            <table>
+              <thead>
+                <tr>
+                  <th>ลำดับ</th>
+                  <th>กิจกรรม</th>
+                  <th>รายละเอียด</th>
+                  <th>ปัญหา / อุปสรรค</th>
+                  <th>แนวทางการแก้ไข</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedPlan.items.map((a, i) => (
+                  <tr key={i}>
+                    <td style={{ textAlign:"center" }}>{a.ActivityOrder}</td>
+                    <td>{a.ActivityName}</td>
+                    <td>{a[detailKey]}</td>
+                    <td>{a[problemKey]}</td>
+                    <td>{a[solutionKey]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </div>
     </div>
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 
 </script>
 </body>
