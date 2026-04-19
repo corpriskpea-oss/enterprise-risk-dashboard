@@ -4,69 +4,30 @@
   <meta charset="UTF-8" />
   <title>Enterprise Risk Dashboard</title>
 
-  <!-- ===================== -->
-  <!-- 1. JavaScript Libraries -->
-  <!-- ===================== -->
+  <!-- ✅ React -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-  <!-- React -->
-  <script src="https://unpkg.com/react@18/umd/react.development src="https://unpkg.com/react-dom@18/umd/react-dom.de
-  <!-- Babel (สำหรับ JSX) -->
-  <script src="https://unpkg.com/@babel/standalone/babel-- PapaParse (CSV Parser) -->
-  <script src="https://unpkg.com/papaparse@5.4.1/papaparse-- ===================== -->
-  <!-- 2. CSS -->
-  <!-- ===================== -->
+  <!-- ✅ Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- ✅ PapaParse -->
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
-    }
-    .layout {
-      display: flex;
-      min-height: 100vh;
-    }
-    .sidebar {
-      width: 240px;
-      background: #0f172a;
-      color: white;
-      padding: 16px;
-    }
-    .sidebar h3 {
-      margin-top: 0;
-    }
-    .sidebar button {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 8px;
-      background: none;
-      border: none;
-      color: white;
-      text-align: left;
-      cursor: pointer;
-    }
-    .content {
-      flex: 1;
-      padding: 24px;
-      background: white;
-    }
+    body { margin:0; font-family: Arial, sans-serif; }
+    .layout { display:flex; min-height:100vh; }
+    .sidebar { width:220px; background:#0f172a; color:white; padding:16px; }
+    .content { flex:1; padding:24px; }
   </style>
 </head>
 
 <body>
-  <!-- ===================== -->
-  <!-- 3. React Mount Point -->
-  <!-- ===================== -->
   <div id="root"></div>
 
-  <!-- ===================== -->
-  <!-- 4. React / JSX Code -->
-  <!-- ===================== -->
   <script type="text/babel">
-    // === React code must be FULLY inside this script ===
-
     function App() {
       const [menu, setMenu] = React.useState("kri");
-
       return (
         <div className="layout">
           <div className="sidebar">
@@ -74,10 +35,9 @@
             <button onClick={() => setMenu("plan")}>Plan</button>
             <button onClick={() => setMenu("kri")}>KRI</button>
           </div>
-
           <div className="content">
             <h2>{menu.toUpperCase()}</h2>
-            <p>✅ HTML 구조 정상 / React 동작 확인</p>
+            <p>✅ BASE ทำงานแล้ว</p>
           </div>
         </div>
       );
@@ -89,3 +49,4 @@
   </script>
 </body>
 </html>
+``
