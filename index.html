@@ -1,25 +1,46 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<title>Risk Matrix Dashboard – v3.00</title>
+<meta charset="UTF-8" />
+<title>Enterprise Risk Dashboard – v3.01 (Matrix)</title>
 
 <!-- PapaParse -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-body { font-family: Arial, sans-serif; background:#f4f6f8; }
-.container { max-width: 980px; margin:20px auto; }
+body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+.layout { display:flex; min-height:100vh; }
+
+.sidebar {
+  width:240px;
+  background:#0f172a;
+  color:white;
+  padding:16px;
+}
+.sidebar button {
+  width:100%;
+  padding:10px;
+  margin-bottom:8px;
+  background:none;
+  border:none;
+  color:white;
+  text-align:left;
+  cursor:pointer;
+}
+.sidebar button.active { background:#334155; }
+
+.content { flex:1; padding:24px; background:white; }
 
 .controls select { padding:6px; margin-right:10px; }
-.matrix-title { margin:8px 0; font-weight:bold; }
+.matrix-title { margin:12px 0; font-weight:bold; }
 
-.matrix-wrapper { position:relative; }
+.matrix-wrapper { position:relative; max-width:900px; }
 .matrix {
   display:grid;
   grid-template-columns:repeat(5,1fr);
   gap:2px;
 }
+
 .cell {
   height:90px;
   display:flex;
@@ -46,10 +67,7 @@ body { font-family: Arial, sans-serif; background:#f4f6f8; }
   border-right:11px solid transparent;
   border-bottom:22px solid #1e88e5;
 }
-.star {
-  font-size:26px;
-  color:#8e24aa;
-}
+.star { font-size:26px; color:#8e24aa; }
 
 svg {
   position:absolute; top:0; left:0;
@@ -72,50 +90,81 @@ svg {
 </head>
 
 <body>
-<div class="container">
+<div class="layout">
 
-<h2>Risk Matrix Dashboard</h2>
+  <div class="sidebar">
+    <h3>Enterprise Risk</h3>
+    <button class="active">Matrix</button>
+  </div>
 
-<div class="controls">
-RF:
-<select id="rf"></select>
+  <div class="content">
+    <h2>Risk Matrix</h2>
 
-Quarter:
-<select id="q">
-  <option value="Q1">Q1/2569</option>
-  <option value="Q2">Q2/2569</option>
-  <option value="Q3">Q3/2569</option>
-  <option value="Q4">Q4/2569</option>
-</select>
-</div>
+    <div class="controls">
+      RF:
+      <select id="rf"></select>
 
-<div id="title" class="matrix-title"></div>
+      Quarter:
+      <select id="q">
+        <option value="Q1">Q1/2569</option>
+        <option value="Q2">Q2/2569</option>
+        <option value="Q3">Q3/2569</option>
+        <option value="Q4">Q4/2569</option>
+      </select>
+    </div>
 
-<div class="matrix-wrapper">
-<svg id="svg">
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto">
-      <polygon points="0,0 10,5 0,10" fill="#8e24aa"/>
-    </marker>
-  </defs>
-</svg>
-<div id="matrix" class="matrix"></div>
-</div>
+    <div id="title" class="matrix-title"></div>
 
-<div class="legend">
-● ดำ = Pre‑Management &nbsp;
-▲ ฟ้า = Post‑Management &nbsp;
-★ ม่วง = L‑Qx × I‑Qx
-</div>
+    <div class="matrix-wrapper">
+      <svg id="svg">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto">
+            <polygon points="0,0 10,5 0,10" fill="#8e24aa"/>
+          </marker>
+        </defs>
+      </svg>
+      <div id="matrix" class="matrix"></div>
+    </div>
 
-<div id="axisInfo" class="axis-box"></div>
+    <div class="legend">
+      ● ดำ = Pre‑Management &nbsp;
+      ▲ ฟ้า = Post‑Management &nbsp;
+      ★ ม่วง = L‑Qx × I‑Qx
+    </div>
 
+    <div id="axisInfo" class="axis-box"></div>
+  </div>
 </div>
 
 <script>
-const sheetUrl =
-  "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=523652456";
+/* ================= Axis Meaning ================= */
+const axisMeaning = {
+  1:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถสร้างมูลค่าเพิ่มในธุรกิจหลัก (core regulated business) ได้ตามเป้าหมายที่องค์กรกำหนด" },
+  2:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถสร้างรายได้จากธุรกิจ B2B, B2C, ThaiSkill และรายได้ธุรกิจเกี่ยวเนื่องจากลูกค้าธุรกิจ Data Center ได้ตามเป้าหมาย" },
+  3:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถสร้าง Grid Capacity ให้เพียงพอรองรับ EEC และ Direct PPA และไม่สามารถลดก๊าซเรือนกระจกองค์กรได้ตามเป้าหมาย" },
+  4:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถดำเนินงานในการจัดหาและให้บริการพลังงานไฟฟ้าในนิคมอุตสาหกรรม และจัดตั้งบริษัทใหม่ได้ตามเป้าหมาย" },
+  5:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"กลุ่มเป้าหมายไม่สามารถผ่านการประเมินทักษะดิจิทัลหรือ AI ตามเกณฑ์ที่กำหนด" },
+  6:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถบริหารค่า SAIFI และ SAIDI ของ กฟส.เกาะสมุยได้ตามเป้าหมาย" }
+};
 
+/* ================= Helpers ================= */
+const clamp = v => Math.min(5, Math.max(1, v));
+function riskLevel(s){ return s<=4?"low":s<=14?"medium":"high"; }
+
+/* ✅ ตรวจว่ามีข้อมูล Quarter จริงหรือไม่ */
+function hasQuarterData(q){
+  return q && q.L !== "" && q.I !== "" &&
+         q.L != null && q.I != null &&
+         !isNaN(q.L) && !isNaN(q.I);
+}
+
+/* ================= DOM ================= */
 const matrix = document.getElementById("matrix");
 const svg = document.getElementById("svg");
 const rfSel = document.getElementById("rf");
@@ -123,14 +172,7 @@ const qSel = document.getElementById("q");
 const title = document.getElementById("title");
 const axisBox = document.getElementById("axisInfo");
 
-const clamp = v => Math.min(5, Math.max(1, v));
-
-function riskLevel(s){
-  if (s <= 4) return "low";
-  if (s <= 14) return "medium";
-  return "high";
-}
-
+/* ================= Matrix Drawing ================= */
 function drawMatrix(){
   matrix.innerHTML="";
   svg.innerHTML = svg.innerHTML.split("</defs>")[0]+"</defs>";
@@ -144,10 +186,7 @@ function drawMatrix(){
   }
 }
 
-function pos(L,I){
-  L=clamp(L); I=clamp(I);
-  return { x:(L-0.5)*20, y:(5-I+0.5)*20 };
-}
+function pos(L,I){ return { x:(clamp(L)-0.5)*20, y:(5-clamp(I)+0.5)*20 }; }
 
 function drawArrow(a,b){
   const l=document.createElementNS("http://www.w3.org/2000/svg","line");
@@ -162,64 +201,64 @@ function drawArrow(a,b){
 }
 
 function plot(L,I,html,off){
-  L=clamp(L); I=clamp(I);
   const p=document.createElement("div");
   p.className="point";
   p.innerHTML=html;
-  p.style.left=`calc(${(L-0.5)*20}% + ${off}px)`;
-  p.style.top=`calc(${(5-I+0.5)*20}% + ${off}px)`;
+  p.style.left=`calc(${(clamp(L)-0.5)*20}% + ${off}px)`;
+  p.style.top=`calc(${(5-clamp(I)+0.5)*20}% + ${off}px)`;
   matrix.appendChild(p);
 }
 
-let data = [];
+/* ================= Load Data ================= */
+const sheetUrl =
+"https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=523652456";
 
-Papa.parse(sheetUrl, {
-  download:true,
-  header:true,
-  skipEmptyLines:true,
+let data=[];
+Papa.parse(sheetUrl,{
+  download:true,header:true,skipEmptyLines:true,
   complete(res){
-    data = res.data.map(r => ({
-      rf: r.RF,
-      pre:{ L:+r.L_pre, I:+r.I_pre },
-      post:{ L:+r.L_post, I:+r.I_post },
-      Q1:{ L:+r.L_Q1, I:+r.I_Q1 },
-      Q2:{ L:+r.L_Q2, I:+r.I_Q2 },
-      Q3:{ L:+r.L_Q3, I:+r.I_Q3 },
-      Q4:{ L:+r.L_Q4, I:+r.I_Q4 }
+    data=res.data.map(r=>({
+      rf:r.RF,
+      pre:{L:+r.L_pre,I:+r.I_pre},
+      post:{L:+r.L_post,I:+r.I_post},
+      Q1:{L:r.L_Q1,I:r.I_Q1},
+      Q2:{L:r.L_Q2,I:r.I_Q2},
+      Q3:{L:r.L_Q3,I:r.I_Q3},
+      Q4:{L:r.L_Q4,I:r.I_Q4}
     }));
-
-    rfSel.innerHTML =
-      `<option value="ALL">ทั้งหมด</option>` +
-      [...new Set(data.map(d=>d.rf))]
-        .map(rf=>`<option value="${rf}">RF${rf}</option>`).join("");
-
+    rfSel.innerHTML='<option value="ALL">ทั้งหมด</option>'+
+      [...new Set(data.map(d=>d.rf))].map(r=>`<option value="${r}">RF${r}</option>`).join("");
     render();
   }
 });
 
+/* ================= Render ================= */
 function render(){
   drawMatrix();
-  const rf = rfSel.value;
-  const q = qSel.value;
+  const rf=rfSel.value, q=qSel.value;
 
-  title.textContent = `Pre → ${q}/2569 | ${rf==="ALL"?"ทุก RF":"RF"+rf}`;
+  title.textContent=`Pre → ${q}/2569 | ${rf==="ALL"?"ทุก RF":"RF"+rf}`;
 
-  axisBox.innerHTML =
-    "<b>ความหมายแกนโอกาส (Likelihood):</b> ความสำเร็จการดำเนินงานตามแผนบริหารความเสี่ยง<br>"+
-    "<b>ความหมายแกนผลกระทบ (Impact):</b> ผลกระทบต่อเป้าหมายเชิงยุทธศาสตร์ขององค์กร";
+  if(rf==="ALL"){
+    axisBox.innerHTML="<b>Likelihood:</b> ความสำเร็จการดำเนินงานตามแผนบริหารความเสี่ยง<br><b>Impact:</b> ผลกระทบต่อเป้าหมายเชิงยุทธศาสตร์ขององค์กร";
+  }else{
+    axisBox.innerHTML=`<b>Likelihood:</b> ${axisMeaning[rf].likelihood}<br><b>Impact:</b> ${axisMeaning[rf].impact}`;
+  }
 
   data.filter(d=>rf==="ALL"||d.rf==rf).forEach((d,i)=>{
-    plot(d.pre.L, d.pre.I,'<div class="circle"></div>',i*4);
+    plot(d.pre.L,d.pre.I,'<div class="circle"></div>',i*4);
     plot(d.post.L,d.post.I,'<div class="triangle"></div>',i*4+6);
-    if(d[q]){
+
+    if (hasQuarterData(d[q])) {
       drawArrow(pos(d.pre.L,d.pre.I), pos(d[q].L,d[q].I));
       plot(d[q].L,d[q].I,'<div class="star">★</div>',i*4+14);
     }
   });
 }
 
-rfSel.onchange = render;
-qSel.onchange = render;
+rfSel.onchange=render;
+qSel.onchange=render;
 </script>
 </body>
 </html>
+``
