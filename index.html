@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.0</title>
+<title>Enterprise Risk Dashboard – v2.00</title>
 
 <!-- ✅ React -->
 <script src="https://unpkg.com/react@18/umd/react.development.jsript src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -10,7 +10,7 @@
 <!-- ✅ Babel -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<!-- ✅ PapaParse (CSV parser) -->
+<!-- ✅ PapaParse (CSV Parser) -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -59,7 +59,6 @@
   th, td {
     border: 1px solid #ddd;
     padding: 8px;
-    vertical-align: middle;
   }
   th {
     background: #e5e7eb;
@@ -95,7 +94,7 @@
 <script type="text/babel">
 
 /* =====================================================
-   Hook: Load KRI data from Google Sheet
+   Hook : KRI Data
    ===================================================== */
 function useKRIData() {
   const [rows, setRows] = React.useState([]);
@@ -105,12 +104,13 @@ function useKRIData() {
   React.useEffect(() => {
     const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
     const sheetName = "KRI";
+
     const url =
       `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=${sheetName}`;
 
     fetch(url)
       .then(res => {
-        if (!res.ok) throw new Error("โหลด KRI CSV ไม่ได้");
+        if (!res.ok) throw new Error("โหลดข้อมูล KRI ไม่ได้");
         return res.text();
       })
       .then(csv => {
@@ -123,7 +123,7 @@ function useKRIData() {
       })
       .catch(err => {
         console.error(err);
-        setError("ไม่สามารถโหลดข้อมูล KRI ได้");
+        setError("เกิดข้อผิดพลาดในการโหลดข้อมูล KRI");
         setLoading(false);
       });
   }, []);
@@ -132,21 +132,20 @@ function useKRIData() {
 }
 
 /* =====================================================
-   Helper: Risk Color Logic
+   Risk Color Logic
    ===================================================== */
 function getRiskColor(status, rt, ra) {
-  if (status < rt) return "#dc2626";   // red
-  if (status < ra) return "#f59e0b";   // yellow
-  return "#16a34a";                    // green
+  if (status < rt) return "#dc2626";   // แดง
+  if (status < ra) return "#f59e0b";   // เหลือง
+  return "#16a34a";                    // เขียว
 }
 
 /* =====================================================
-   App – v2.0
+   App : v2.00
    ===================================================== */
 function App() {
   const [menu, setMenu] = React.useState("kri");
 
-  /* ---------- KRI Data ---------- */
   const { rows: kriRows, loading: kriLoading, error: kriError } = useKRIData();
   const [rfFilter, setRfFilter] = React.useState("ALL");
 
@@ -164,44 +163,43 @@ function App() {
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
         <button
-          className={menu==="plan"?"active":""}
-          onClick={()=>setMenu("plan")}
+          className={menu === "plan" ? "active" : ""}
+          onClick={() => setMenu("plan")}
         >
-          Plan Report
+          Plan Report (v1)
         </button>
         <button
-          className={menu==="kri"?"active":""}
-          onClick={()=>setMenu("kri")}
+          className={menu === "kri" ? "active" : ""}
+          onClick={() => setMenu("kri")}
         >
-          KRI Report (v2.0)
+          KRI Report (v2.00)
         </button>
       </div>
 
       <div className="content">
-        {/* ===================== PLAN ===================== */}
+        {/* ================= PLAN ================= */}
         {menu === "plan" && (
           <>
             <h2>Plan Report</h2>
-            <p>ใช้ฐาน v1 (ยังไม่แก้ไขใน v2)</p>
+            <p>ใช้โค้ด v1.0.x ของคุณ (ไม่กระทบใน v2.00)</p>
           </>
         )}
 
-        {/* ===================== KRI ===================== */}
+        {/* ================= KRI ================= */}
         {menu === "kri" && (
           <>
             <h2>KRI Report</h2>
 
             {kriLoading && <p>กำลังโหลดข้อมูล KRI…</p>}
-            {kriError && <p style={{color:"red"}}>{kriError}</p>}
+            {kriError && <p style={{ color: "red" }}>{kriError}</p>}
 
             {!kriLoading && !kriError && (
               <>
-                {/* RF Filter */}
                 <div style={{ marginBottom: "12px" }}>
                   <label>RF: </label>
                   <select
                     value={rfFilter}
-                    onChange={(e)=>setRfFilter(e.target.value)}
+                    onChange={e => setRfFilter(e.target.value)}
                   >
                     {rfList.map(rf => (
                       <option key={rf} value={rf}>{rf}</option>
@@ -265,3 +263,4 @@ root.render(<App />);
 </script>
 </body>
 </html>
+``
