@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>Enterprise Risk Dashboard – v2.02</title>
+  <meta charset="UTF-8" />
+  <title>Enterprise Risk Dashboard – BASE</title>
 
   <!-- React -->
-  <script src="https://unpkg.com/react@18/umd/react.development src="https://unpkg.com/react-dom@18/umd/react-domjs</script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
   <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -14,24 +15,13 @@
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+    body { margin:0; font-family: Arial, sans-serif; }
     .layout { display:flex; min-height:100vh; }
-
     .sidebar {
-      width:240px; background:#0f172a; color:white; padding:16px;
+      width:220px; background:#0f172a; color:white; padding:16px;
     }
-    .sidebar button {
-      width:100%; padding:10px; margin-bottom:8px;
-      background:none; border:none; color:white;
-      text-align:left; cursor:pointer;
-    }
-    .sidebar button.active { background:#334155; }
-
-    .content { flex:1; padding:24px; background:white; }
-
-    table { width:100%; border-collapse:collapse; margin-top:12px; }
-    th, td { border:1px solid #ddd; padding:8px; }
-    th { background:#e5e7eb; text-align:center; }
+    .content { flex:1; padding:24px; }
+    button { margin-right:8px; }
   </style>
 </head>
 
@@ -39,66 +29,18 @@
 <div id="root"></div>
 
 <script type="text/babel">
-/* utility */
-function toNumber(v){
-  if (v == null) return NaN;
-  return Number(String(v).replace('%','').trim());
-}
-
-function getRiskColor(status, rt, ra){
-  if (isNaN(status)||isNaN(rt)||isNaN(ra)) return "#9ca3af";
-  if (status < rt) return "#dc2626";
-  if (status < ra) return "#f59e0b";
-  return "#16a34a";
-}
-
-/* KRI hook */
-function useKRIData(){
-  const [rows,setRows] = React.useState([]);
-  React.useEffect(()=>{
-    const url = "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&sheet=KRI";
-    fetch(url)
-      .then(r=>r.text())
-      .then(csv=>{
-        const p = Papa.parse(csv,{header:true,skipEmptyLines:true});
-        setRows(p.data);
-      });
-  },[]);
-  return rows;
-}
-
 function App(){
-  const [menu,setMenu] = React.useState("kri");
-  const kriRows = useKRIData();
-
+  const [menu, setMenu] = React.useState("kri");
   return (
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button onClick={()=>setMenu("plan")}>Plan</button>
-        <button onClick={()=>setMenu("kri")}>KRI</button>
+        <button onClick={() => setMenu("plan")}>Plan</button>
+        <button onClick={() => setMenu("kri")}>KRI</button>
       </div>
-
       <div className="content">
-        {menu==="plan" && <h2>Plan Report</h2>}
-
-        {menu==="kri" && (
-          <>
-            <h2>KRI Report</h2>
-            <ul>
-              {kriRows.map((k,i)=>{
-                const s = toNumber(k.KRI_Status);
-                const rt = toNumber(k.RT);
-                const ra = toNumber(k.RA);
-                return (
-                  <li key={i} style={{color:getRiskColor(s,rt,ra)}}>
-                    {k.KRI_Name} : {isNaN(s)?"-":s}
-                  </li>
-                );
-              })}
-            </ul>
-          </>
-        )}
+        <h2>{menu.toUpperCase()}</h2>
+        <p>✅ BASE ทำงานแล้ว (ไม่หน้าขาว)</p>
       </div>
     </div>
   );
