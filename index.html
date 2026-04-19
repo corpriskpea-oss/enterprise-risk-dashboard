@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.00 (KRI)</title>
+<title>Enterprise Risk Dashboard – v2.01 (KRI)</title>
 
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -74,8 +74,8 @@ th {
   background:#e5e7eb;
 }
 .gauge {
-  width:120px;
-  height:65px;
+  width:140px;
+  height:80px;
 }
 </style>
 </head>
@@ -85,20 +85,19 @@ th {
 
 <script type="text/babel">
 
-/* ==================== Utilities ==================== */
+/* ================= Utilities ================= */
 function isNumeric(val) {
   return val !== null && val !== "" && !isNaN(val);
 }
 
-/* ==================== Data Hook ==================== */
+/* ================= Data Hook ================= */
 function useKRIData() {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
     const url =
-      `https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339`;
+      "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339";
 
     fetch(url)
       .then(res => res.text())
@@ -115,39 +114,80 @@ function useKRIData() {
   return { rows, loading };
 }
 
-/* ==================== Risk Gauge ==================== */
-function RiskGauge({ value, ra, rt }) {
-  let color = "#16a34a"; // green
-  if (value < rt) color = "#dc2626";       // red
-  else if (value < ra) color = "#facc15"; // yellow
+/* ================= Risk Meter (3 สี + เข็ม) ================= */
+function RiskMeter({ value, ra, rt }) {
 
-  const max = Math.max(ra, value);
-  const percent = Math.min(value / max, 1);
-  const arc = percent * 180;
+  // ยังไม่กำหนดเกณฑ์
+  if (ra === 0 && rt === 0) {
+    return <span className="badge">ยังไม่กำหนดเกณฑ์</span>;
+  }
+
+  const max = Math.max(value, ra) * 1.1;
+
+  const toAngle = v => Math.min((v / max) * 180, 180);
+
+  const rtAngle = toAngle(rt);
+  const raAngle = toAngle(ra);
+  const valAngle = toAngle(value);
+
+  const polar = angle => {
+    const rad = (angle - 180) * Math.PI / 180;
+    return {
+      x: 100 + 80 * Math.cos(rad),
+      y: 90 + 80 * Math.sin(rad)
+    };
+  };
+
+  const rtP = polar(rtAngle);
+  const raP = polar(raAngle);
+  const valP = polar(valAngle);
 
   return (
-    <svg viewBox="0 0 200 100" className="gauge">
+    <svg viewBox="0 0 200 120" className="gauge">
+      {/* 🔴 Red zone */}
       <path
-        d="M10 90 A80 80 0 0 1 190 90"
+        d={`M20 90 A80 80 0 0 1 ${rtP.x} ${rtP.y}`}
         fill="none"
-        stroke="#e5e7eb"
+        stroke="#dc2626"
         strokeWidth="16"
       />
+
+      {/* 🟡 Yellow zone */}
       <path
-        d="M10 90 A80 80 0 0 1 190 90"
+        d={`M${rtP.x} ${rtP.y} A80 80 0 0 1 ${raP.x} ${raP.y}`}
         fill="none"
-        stroke={color}
+        stroke="#facc15"
         strokeWidth="16"
-        strokeDasharray={`${arc * 2.8} 1000`}
       />
-      <text x="100" y="80" textAnchor="middle" fontSize="14">
+
+      {/* 🟢 Green zone */}
+      <path
+        d={`M${raP.x} ${raP.y} A80 80 0 0 1 180 90`}
+        fill="none"
+        stroke="#16a34a"
+        strokeWidth="16"
+      />
+
+      {/* 🪡 Needle */}
+      <line
+        x1="100"
+        y1="90"
+        x2={valP.x}
+        y2={valP.y}
+        stroke="#111827"
+        strokeWidth="3"
+      />
+      <circle cx="100" cy="90" r="4" fill="#111827" />
+
+      {/* Value */}
+      <text x="100" y="115" textAnchor="middle" fontSize="12">
         {value}
       </text>
     </svg>
   );
 }
 
-/* ==================== App ==================== */
+/* ================= App ================= */
 function App() {
   const { rows, loading } = useKRIData();
   const [rfFilter, setRfFilter] = React.useState("ALL");
@@ -167,7 +207,7 @@ function App() {
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button className="active">KRI Report v2.00</button>
+        <button className="active">KRI Report v2.01</button>
       </div>
 
       <div className="content">
@@ -192,12 +232,12 @@ function App() {
             <table>
               <thead>
                 <tr>
-                  <th style={{width:"8%"}}>RF</th>
+                  <th style={{width:"6%"}}>RF</th>
                   <th>KRI_Name</th>
                   <th style={{width:"12%"}}>KRI_Status</th>
-                  <th style={{width:"10%"}}>RA</th>
-                  <th style={{width:"10%"}}>RT</th>
-                  <th style={{width:"15%"}}>Risk Meter</th>
+                  <th style={{width:"8%"}}>RA</th>
+                  <th style={{width:"8%"}}>RT</th>
+                  <th style={{width:"18%"}}>Risk Meter</th>
                 </tr>
               </thead>
               <tbody>
@@ -216,7 +256,7 @@ function App() {
                       <td style={{textAlign:"center"}}>{r.RT}</td>
                       <td style={{textAlign:"center"}}>
                         {numeric ? (
-                          <RiskGauge
+                          <RiskMeter
                             value={Number(r.KRI_Status)}
                             ra={Number(r.RA)}
                             rt={Number(r.RT)}
