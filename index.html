@@ -5,91 +5,40 @@
   <title>Enterprise Risk Dashboard – v2.03</title>
 
   <!-- ✅ React -->
-  <script src="https://unpkg.com/react@18/umd/react.development.jsc="https://unpkg.com/react-dom@18/umd/react-domjs</script>
-
-  <!-- ✅ Babel (JSX support) -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- ✅ PapaParse (CSV from Google Sheet) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.jsc="https://unpkg.com/react-dom@18/umd/react-dom.development Babel (JSX support) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js<!-- ✅ PapaParse (CSV) -->
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
-    }
-    .layout {
-      display: flex;
-      min-height: 100vh;
-    }
-    .sidebar {
-      width: 240px;
-      background: #0f172a;
-      color: white;
-      padding: 16px;
-    }
-    .sidebar h3 {
-      margin-top: 0;
-    }
+    body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+    .layout { display:flex; min-height:100vh; }
+    .sidebar { width:240px; background:#0f172a; color:white; padding:16px; }
+    .sidebar h3 { margin-top:0; }
     .sidebar button {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 8px;
-      background: none;
-      border: none;
-      color: white;
-      text-align: left;
-      cursor: pointer;
+      width:100%; padding:10px; margin-bottom:8px;
+      background:none; border:none; color:white; text-align:left; cursor:pointer;
     }
-    .sidebar button.active {
-      background: #334155;
-    }
-    .content {
-      flex: 1;
-      padding: 24px;
-      background: white;
-    }
+    .sidebar button.active { background:#334155; }
+    .content { flex:1; padding:24px; background:white; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-    }
-    th {
-      background: #e5e7eb;
-      text-align: center;
-    }
-    td {
-      vertical-align: middle;
-    }
-    .center {
-      text-align: center;
-    }
+    table { width:100%; border-collapse:collapse; margin-top:16px; }
+    th, td { border:1px solid #ddd; padding:8px; }
+    th { background:#e5e7eb; text-align:center; }
+    .center { text-align:center; }
   </style>
 </head>
 
 <body>
-  <!-- React mount point -->
   <div id="root"></div>
 
-  <!-- React / JSX code -->
   <script type="text/babel">
-    /********************
-     * Utility
-     ********************/
+    /* ================= Utilities ================= */
     function toNumber(val) {
       if (val === undefined || val === null) return "";
       return String(val).replace("%", "").trim();
     }
 
-    /********************
-     * PATCH A: Load KRI data
-     ********************/
+    /* ================= PATCH A: Load KRI data ================= */
     function useKRIData() {
       const [rows, setRows] = React.useState([]);
       const [loading, setLoading] = React.useState(true);
@@ -97,14 +46,10 @@
       React.useEffect(() => {
         const url =
           "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&sheet=KRI";
-
         fetch(url)
           .then(res => res.text())
           .then(csv => {
-            const parsed = Papa.parse(csv, {
-              header: true,
-              skipEmptyLines: true
-            });
+            const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
             setRows(parsed.data);
             setLoading(false);
           });
@@ -113,31 +58,17 @@
       return { rows, loading };
     }
 
-    /********************
-     * App v2.03
-     ********************/
+    /* ================= App v2.03 (PATCH B: render table) ================= */
     function App() {
       const [menu, setMenu] = React.useState("kri");
-
-      // ใช้ PATCH A
       const { rows: kriRows, loading } = useKRIData();
 
       return (
         <div className="layout">
           <div className="sidebar">
             <h3>Enterprise Risk</h3>
-            <button
-              className={menu === "plan" ? "active" : ""}
-              onClick={() => setMenu("plan")}
-            >
-              Plan
-            </button>
-            <button
-              className={menu === "kri" ? "active" : ""}
-              onClick={() => setMenu("kri")}
-            >
-              KRI
-            </button>
+            <button className={menu==="plan"?"active":""} onClick={() => setMenu("plan")}>Plan</button>
+            <button className={menu==="kri"?"active":""} onClick={() => setMenu("kri")}>KRI</button>
           </div>
 
           <div className="content">
@@ -151,9 +82,7 @@
             {menu === "kri" && (
               <>
                 <h2>KRI Report</h2>
-
                 {loading && <p>กำลังโหลดข้อมูล KRI…</p>}
-
                 {!loading && (
                   <table>
                     <thead>
@@ -185,9 +114,7 @@
       );
     }
 
-    ReactDOM
-      .createRoot(document.getElementById("root"))
-      .render(<App />);
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   </script>
 </body>
 </html>
