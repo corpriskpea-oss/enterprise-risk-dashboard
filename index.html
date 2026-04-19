@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.01 (KRI)</title>
+<title>Enterprise Risk Dashboard – v2.02 (KRI)</title>
 
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -86,8 +86,14 @@ th {
 <script type="text/babel">
 
 /* ================= Utilities ================= */
+// แปลงตัวเลขที่มี comma ให้เป็น Number
+function toNumber(val) {
+  if (val === null || val === undefined) return NaN;
+  return Number(String(val).replace(/,/g, ""));
+}
+
 function isNumeric(val) {
-  return val !== null && val !== "" && !isNaN(val);
+  return !isNaN(toNumber(val));
 }
 
 /* ================= Data Hook ================= */
@@ -123,7 +129,6 @@ function RiskMeter({ value, ra, rt }) {
   }
 
   const max = Math.max(value, ra) * 1.1;
-
   const toAngle = v => Math.min((v / max) * 180, 180);
 
   const rtAngle = toAngle(rt);
@@ -144,23 +149,21 @@ function RiskMeter({ value, ra, rt }) {
 
   return (
     <svg viewBox="0 0 200 120" className="gauge">
-      {/* 🔴 Red zone */}
+      {/* 🔴 Red */}
       <path
         d={`M20 90 A80 80 0 0 1 ${rtP.x} ${rtP.y}`}
         fill="none"
         stroke="#dc2626"
         strokeWidth="16"
       />
-
-      {/* 🟡 Yellow zone */}
+      {/* 🟡 Yellow */}
       <path
         d={`M${rtP.x} ${rtP.y} A80 80 0 0 1 ${raP.x} ${raP.y}`}
         fill="none"
         stroke="#facc15"
         strokeWidth="16"
       />
-
-      {/* 🟢 Green zone */}
+      {/* 🟢 Green */}
       <path
         d={`M${raP.x} ${raP.y} A80 80 0 0 1 180 90`}
         fill="none"
@@ -168,7 +171,7 @@ function RiskMeter({ value, ra, rt }) {
         strokeWidth="16"
       />
 
-      {/* 🪡 Needle */}
+      {/* Needle */}
       <line
         x1="100"
         y1="90"
@@ -179,7 +182,6 @@ function RiskMeter({ value, ra, rt }) {
       />
       <circle cx="100" cy="90" r="4" fill="#111827" />
 
-      {/* Value */}
       <text x="100" y="115" textAnchor="middle" fontSize="12">
         {value}
       </text>
@@ -207,7 +209,7 @@ function App() {
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button className="active">KRI Report v2.01</button>
+        <button className="active">KRI Report v2.02</button>
       </div>
 
       <div className="content">
@@ -257,9 +259,9 @@ function App() {
                       <td style={{textAlign:"center"}}>
                         {numeric ? (
                           <RiskMeter
-                            value={Number(r.KRI_Status)}
-                            ra={Number(r.RA)}
-                            rt={Number(r.RT)}
+                            value={toNumber(r.KRI_Status)}
+                            ra={toNumber(r.RA)}
+                            rt={toNumber(r.RT)}
                           />
                         ) : (
                           <span className="badge">KRI เชิงคุณภาพ</span>
