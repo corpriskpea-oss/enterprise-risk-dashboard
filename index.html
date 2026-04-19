@@ -2,30 +2,21 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v3.01 (Matrix)</title>
+<title>Enterprise Risk Dashboard – v3.02 (Matrix)</title>
 
 <!-- PapaParse -->
-<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+https://unpkg.com/papaparse@5.4.1/papaparse.min.jsscript>
 
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
 .layout { display:flex; min-height:100vh; }
 
 .sidebar {
-  width:240px;
-  background:#0f172a;
-  color:white;
-  padding:16px;
+  width:240px; background:#0f172a; color:white; padding:16px;
 }
 .sidebar button {
-  width:100%;
-  padding:10px;
-  margin-bottom:8px;
-  background:none;
-  border:none;
-  color:white;
-  text-align:left;
-  cursor:pointer;
+  width:100%; padding:10px; margin-bottom:8px;
+  background:none; border:none; color:white; text-align:left; cursor:pointer;
 }
 .sidebar button.active { background:#334155; }
 
@@ -34,35 +25,37 @@ body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
 .controls select { padding:6px; margin-right:10px; }
 .matrix-title { margin:12px 0; font-weight:bold; }
 
+.cards {
+  display:flex; gap:12px; margin:12px 0;
+}
+.card {
+  flex:1; padding:12px; border-radius:8px;
+  font-size:14px; color:#111;
+}
+.card b { display:block; margin-bottom:6px; }
+.card.gray { background:#e5e7eb; color:#374151; }
+.card.low { background:#43a047; color:white; }
+.card.medium { background:#fdd835; }
+.card.high { background:#e53935; color:white; }
+
 .matrix-wrapper { position:relative; max-width:900px; }
 .matrix {
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:2px;
+  display:grid; grid-template-columns:repeat(5,1fr); gap:2px;
 }
-
 .cell {
-  height:90px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:bold;
+  height:90px; display:flex; align-items:center;
+  justify-content:center; font-weight:bold;
 }
 .low { background:#43a047; color:white; }
 .medium { background:#fdd835; }
 .high { background:#e53935; color:white; }
 
 .point {
-  position:absolute;
-  transform:translate(-50%,-50%);
-  z-index:3;
+  position:absolute; transform:translate(-50%,-50%); z-index:3;
 }
-.circle {
-  width:22px; height:22px;
-  background:black; border-radius:50%;
-}
+.circle { width:22px; height:22px; background:black; border-radius:50%; }
 .triangle {
-  width:0;height:0;
+  width:0; height:0;
   border-left:11px solid transparent;
   border-right:11px solid transparent;
   border-bottom:22px solid #1e88e5;
@@ -76,14 +69,9 @@ svg {
 }
 
 .legend { margin-top:10px; font-size:14px; }
-
 .axis-box {
-  margin-top:14px;
-  padding:12px;
-  background:#ffffff;
-  border-left:6px solid #1976d2;
-  font-size:14px;
-  line-height:1.6;
+  margin-top:14px; padding:12px; background:#fff;
+  border-left:6px solid #1976d2; font-size:14px; line-height:1.6;
 }
 .axis-box b { color:#0d47a1; }
 </style>
@@ -92,173 +80,169 @@ svg {
 <body>
 <div class="layout">
 
-  <div class="sidebar">
-    <h3>Enterprise Risk</h3>
-    <button class="active">Matrix</button>
+<div class="sidebar">
+  <h3>Enterprise Risk</h3>
+  <button class="active">Matrix</button>
+</div>
+
+<div class="content">
+<h2>Risk Matrix</h2>
+
+<div class="controls">
+  RF:
+  <select id="rf"></select>
+  Quarter:
+  <select id="q">
+    <option value="Q1">Q1/2569</option>
+    <option value="Q2">Q2/2569</option>
+    <option value="Q3">Q3/2569</option>
+    <option value="Q4">Q4/2569</option>
+  </select>
+</div>
+
+<!-- ✅ Summary Cards -->
+<div class="cards">
+  <div id="cardL" class="card gray">
+    <b>Likelihood</b><span>-</span>
   </div>
-
-  <div class="content">
-    <h2>Risk Matrix</h2>
-
-    <div class="controls">
-      RF:
-      <select id="rf"></select>
-
-      Quarter:
-      <select id="q">
-        <option value="Q1">Q1/2569</option>
-        <option value="Q2">Q2/2569</option>
-        <option value="Q3">Q3/2569</option>
-        <option value="Q4">Q4/2569</option>
-      </select>
-    </div>
-
-    <div id="title" class="matrix-title"></div>
-
-    <div class="matrix-wrapper">
-      <svg id="svg">
-        <defs>
-          <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto">
-            <polygon points="0,0 10,5 0,10" fill="#8e24aa"/>
-          </marker>
-        </defs>
-      </svg>
-      <div id="matrix" class="matrix"></div>
-    </div>
-
-    <div class="legend">
-      ● ดำ = Pre‑Management &nbsp;
-      ▲ ฟ้า = Post‑Management &nbsp;
-      ★ ม่วง = L‑Qx × I‑Qx
-    </div>
-
-    <div id="axisInfo" class="axis-box"></div>
+  <div id="cardI" class="card gray">
+    <b>Impact</b><span>-</span>
+  </div>
+  <div id="cardS" class="card gray">
+    <b>Risk Score (L×I)</b><span>-</span>
   </div>
 </div>
 
+<div id="title" class="matrix-title"></div>
+
+<div class="matrix-wrapper">
+  <svg id="svg">
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10"
+              refX="10" refY="5" orient="auto">
+        <polygon points="0,0 10,5 0,10" fill="#8e24aa"/>
+      </marker>
+    </defs>
+  </svg>
+  <div id="matrix" class="matrix"></div>
+</div>
+
+<div class="legend">
+  ● ดำ = Pre‑Management &nbsp;
+  ▲ ฟ้า = Post‑Management &nbsp;
+  ★ ม่วง = L‑Qx × I‑Qx
+</div>
+
+<div id="axisInfo" class="axis-box"></div>
+</div>
+</div>
+
 <script>
-/* ================= Axis Meaning ================= */
 const axisMeaning = {
-  1:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-      impact:"ไม่สามารถสร้างมูลค่าเพิ่มในธุรกิจหลัก (core regulated business) ได้ตามเป้าหมายที่องค์กรกำหนด" },
-  2:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-      impact:"ไม่สามารถสร้างรายได้จากธุรกิจ B2B, B2C, ThaiSkill และรายได้ธุรกิจเกี่ยวเนื่องจากลูกค้าธุรกิจ Data Center ได้ตามเป้าหมาย" },
-  3:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-      impact:"ไม่สามารถสร้าง Grid Capacity ให้เพียงพอรองรับ EEC และ Direct PPA และไม่สามารถลดก๊าซเรือนกระจกองค์กรได้ตามเป้าหมาย" },
-  4:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-      impact:"ไม่สามารถดำเนินงานในการจัดหาและให้บริการพลังงานไฟฟ้าในนิคมอุตสาหกรรม และจัดตั้งบริษัทใหม่ได้ตามเป้าหมาย" },
-  5:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-      impact:"กลุ่มเป้าหมายไม่สามารถผ่านการประเมินทักษะดิจิทัลหรือ AI ตามเกณฑ์ที่กำหนด" },
-  6:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-      impact:"ไม่สามารถบริหารค่า SAIFI และ SAIDI ของ กฟส.เกาะสมุยได้ตามเป้าหมาย" }
+  1:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+     impact:"ไม่สามารถสร้างมูลค่าเพิ่มในธุรกิจหลัก (core regulated business) ได้ตามเป้าหมายที่องค์กรกำหนด"},
+  2:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+     impact:"ไม่สามารถสร้างรายได้จากธุรกิจ B2B, B2C, ThaiSkill และรายได้ธุรกิจเกี่ยวเนื่องจากลูกค้าธุรกิจ Data Center ได้ตามเป้าหมาย"},
+  3:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+     impact:"ไม่สามารถสร้าง Grid Capacity และลดก๊าซเรือนกระจกองค์กรได้ตามเป้าหมาย"},
+  4:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+     impact:"ไม่สามารถจัดหาและให้บริการพลังงานไฟฟ้าในนิคมอุตสาหกรรมได้ตามเป้าหมาย"},
+  5:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+     impact:"ไม่สามารถผ่านการประเมินทักษะดิจิทัลหรือ AI ตามเกณฑ์ที่กำหนด"},
+  6:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+     impact:"ไม่สามารถบริหารค่า SAIFI และ SAIDI ของ กฟส.เกาะสมุยได้ตามเป้าหมาย"}
 };
 
-/* ================= Helpers ================= */
-const clamp = v => Math.min(5, Math.max(1, v));
-function riskLevel(s){ return s<=4?"low":s<=14?"medium":"high"; }
+const clamp=v=>Math.min(5,Math.max(1,v));
+const riskLevel=s=>s<=4?"low":s<=14?"medium":"high";
+const hasQuarterData=q=>q&&q.L!=""&&q.I!=""&&!isNaN(q.L)&&!isNaN(q.I);
 
-/* ✅ ตรวจว่ามีข้อมูล Quarter จริงหรือไม่ */
-function hasQuarterData(q){
-  return q && q.L !== "" && q.I !== "" &&
-         q.L != null && q.I != null &&
-         !isNaN(q.L) && !isNaN(q.I);
-}
+const matrix=document.getElementById("matrix");
+const svg=document.getElementById("svg");
+const rfSel=document.getElementById("rf");
+const qSel=document.getElementById("q");
+const title=document.getElementById("title");
+const axisBox=document.getElementById("axisInfo");
 
-/* ================= DOM ================= */
-const matrix = document.getElementById("matrix");
-const svg = document.getElementById("svg");
-const rfSel = document.getElementById("rf");
-const qSel = document.getElementById("q");
-const title = document.getElementById("title");
-const axisBox = document.getElementById("axisInfo");
+const cardL=document.getElementById("cardL");
+const cardI=document.getElementById("cardI");
+const cardS=document.getElementById("cardS");
 
-/* ================= Matrix Drawing ================= */
 function drawMatrix(){
   matrix.innerHTML="";
-  svg.innerHTML = svg.innerHTML.split("</defs>")[0]+"</defs>";
-  for(let y=5;y>=1;y--){
-    for(let x=1;x<=5;x++){
-      const c=document.createElement("div");
-      c.className="cell "+riskLevel(x*y);
-      c.textContent=x*y;
-      matrix.appendChild(c);
-    }
+  svg.innerHTML=svg.innerHTML.split("</defs>")[0]+"</defs>";
+  for(let y=5;y>=1;y--)for(let x=1;x<=5;x++){
+    const c=document.createElement("div");
+    c.className="cell "+riskLevel(x*y);
+    c.textContent=x*y;
+    matrix.appendChild(c);
   }
 }
-
-function pos(L,I){ return { x:(clamp(L)-0.5)*20, y:(5-clamp(I)+0.5)*20 }; }
-
+function pos(L,I){return{x:(clamp(L)-.5)*20,y:(5-clamp(I)+.5)*20};}
 function drawArrow(a,b){
   const l=document.createElementNS("http://www.w3.org/2000/svg","line");
-  l.setAttribute("x1",a.x+"%");
-  l.setAttribute("y1",a.y+"%");
-  l.setAttribute("x2",b.x+"%");
-  l.setAttribute("y2",b.y+"%");
-  l.setAttribute("stroke","#8e24aa");
-  l.setAttribute("stroke-width","3");
+  Object.entries({x1:a.x+"%",y1:a.y+"%",x2:b.x+"%",y2:b.y+"%"}).forEach(([k,v])=>l.setAttribute(k,v));
+  l.setAttribute("stroke","#8e24aa"); l.setAttribute("stroke-width","3");
   l.setAttribute("marker-end","url(#arrow)");
   svg.appendChild(l);
 }
-
-function plot(L,I,html,off){
+function plot(L,I,h,o){
   const p=document.createElement("div");
-  p.className="point";
-  p.innerHTML=html;
-  p.style.left=`calc(${(clamp(L)-0.5)*20}% + ${off}px)`;
-  p.style.top=`calc(${(5-clamp(I)+0.5)*20}% + ${off}px)`;
+  p.className="point"; p.innerHTML=h;
+  p.style.left=`calc(${(clamp(L)-.5)*20}% + ${o}px)`;
+  p.style.top=`calc(${(5-clamp(I)+.5)*20}% + ${o}px)`;
   matrix.appendChild(p);
 }
 
-/* ================= Load Data ================= */
-const sheetUrl =
-"https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=523652456";
-
+const sheetUrl="https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=523652456";
 let data=[];
-Papa.parse(sheetUrl,{
-  download:true,header:true,skipEmptyLines:true,
-  complete(res){
-    data=res.data.map(r=>({
-      rf:r.RF,
-      pre:{L:+r.L_pre,I:+r.I_pre},
-      post:{L:+r.L_post,I:+r.I_post},
-      Q1:{L:r.L_Q1,I:r.I_Q1},
-      Q2:{L:r.L_Q2,I:r.I_Q2},
-      Q3:{L:r.L_Q3,I:r.I_Q3},
-      Q4:{L:r.L_Q4,I:r.I_Q4}
-    }));
-    rfSel.innerHTML='<option value="ALL">ทั้งหมด</option>'+
-      [...new Set(data.map(d=>d.rf))].map(r=>`<option value="${r}">RF${r}</option>`).join("");
-    render();
-  }
-});
+Papa.parse(sheetUrl,{download:true,header:true,skipEmptyLines:true,complete(res){
+  data=res.data.map(r=>({
+    rf:r.RF,
+    pre:{L:+r.L_pre,I:+r.I_pre},
+    post:{L:+r.L_post,I:+r.I_post},
+    Q1:{L:r.L_Q1,I:r.I_Q1},
+    Q2:{L:r.L_Q2,I:r.I_Q2},
+    Q3:{L:r.L_Q3,I:r.I_Q3},
+    Q4:{L:r.L_Q4,I:r.I_Q4}
+  }));
+  rfSel.innerHTML='<option value="ALL">ทั้งหมด</option>'+
+    [...new Set(data.map(d=>d.rf))].map(r=>`<option value="${r}">RF${r}</option>`).join("");
+  render();
+}});
 
-/* ================= Render ================= */
+function updateCards(d,q){
+  if(!hasQuarterData(d[q])){
+    [cardL,cardI,cardS].forEach(c=>{c.className="card gray";c.querySelector("span").textContent="-";});
+    return;
+  }
+  const L=Number(d[q].L), I=Number(d[q].I), S=L*I, lvl=riskLevel(S);
+  cardL.className="card "+lvl; cardL.querySelector("span").textContent=L;
+  cardI.className="card "+lvl; cardI.querySelector("span").textContent=I;
+  cardS.className="card "+lvl; cardS.querySelector("span").textContent=S;
+}
+
 function render(){
   drawMatrix();
-  const rf=rfSel.value, q=qSel.value;
-
+  const rf=rfSel.value,q=qSel.value;
   title.textContent=`Pre → ${q}/2569 | ${rf==="ALL"?"ทุก RF":"RF"+rf}`;
+  axisBox.innerHTML=rf==="ALL"
+    ?"<b>Likelihood:</b> ความสำเร็จการดำเนินงานตามแผนบริหารความเสี่ยง<br><b>Impact:</b> ผลกระทบต่อเป้าหมายเชิงยุทธศาสตร์ขององค์กร"
+    :`<b>Likelihood:</b> ${axisMeaning[rf].likelihood}<br><b>Impact:</b> ${axisMeaning[rf].impact}`;
 
-  if(rf==="ALL"){
-    axisBox.innerHTML="<b>Likelihood:</b> ความสำเร็จการดำเนินงานตามแผนบริหารความเสี่ยง<br><b>Impact:</b> ผลกระทบต่อเป้าหมายเชิงยุทธศาสตร์ขององค์กร";
-  }else{
-    axisBox.innerHTML=`<b>Likelihood:</b> ${axisMeaning[rf].likelihood}<br><b>Impact:</b> ${axisMeaning[rf].impact}`;
-  }
+  const row=data.find(d=>rf==="ALL"?true:d.rf==rf);
+  if(row) updateCards(row,q);
 
   data.filter(d=>rf==="ALL"||d.rf==rf).forEach((d,i)=>{
     plot(d.pre.L,d.pre.I,'<div class="circle"></div>',i*4);
     plot(d.post.L,d.post.I,'<div class="triangle"></div>',i*4+6);
-
-    if (hasQuarterData(d[q])) {
-      drawArrow(pos(d.pre.L,d.pre.I), pos(d[q].L,d[q].I));
+    if(hasQuarterData(d[q])){
+      drawArrow(pos(d.pre.L,d.pre.I),pos(d[q].L,d[q].I));
       plot(d[q].L,d[q].I,'<div class="star">★</div>',i*4+14);
     }
   });
 }
-
-rfSel.onchange=render;
-qSel.onchange=render;
+rfSel.onchange=render; qSel.onchange=render;
 </script>
 </body>
 </html>
-``
