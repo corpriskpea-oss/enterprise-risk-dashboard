@@ -4,8 +4,7 @@
 <meta charset="UTF-8" />
 <title>Enterprise Risk Dashboard – v3.02 (Matrix)</title>
 
-<!-- PapaParse -->
-https://unpkg.com/papaparse@5.4.1/papaparse.min.jsscript>
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
@@ -25,19 +24,19 @@ body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
 .controls select { padding:6px; margin-right:10px; }
 .matrix-title { margin:12px 0; font-weight:bold; }
 
-.cards {
-  display:flex; gap:12px; margin:12px 0;
-}
+/* ===== Summary Cards ===== */
+.cards { display:flex; gap:12px; margin:12px 0; }
 .card {
   flex:1; padding:12px; border-radius:8px;
-  font-size:14px; color:#111;
+  font-size:14px;
 }
 .card b { display:block; margin-bottom:6px; }
-.card.gray { background:#e5e7eb; color:#374151; }
+.card.gray { background:#e5e7eb; }
 .card.low { background:#43a047; color:white; }
 .card.medium { background:#fdd835; }
 .card.high { background:#e53935; color:white; }
 
+/* ===== Matrix ===== */
 .matrix-wrapper { position:relative; max-width:900px; }
 .matrix {
   display:grid; grid-template-columns:repeat(5,1fr); gap:2px;
@@ -69,6 +68,7 @@ svg {
 }
 
 .legend { margin-top:10px; font-size:14px; }
+
 .axis-box {
   margin-top:14px; padding:12px; background:#fff;
   border-left:6px solid #1976d2; font-size:14px; line-height:1.6;
@@ -102,15 +102,9 @@ svg {
 
 <!-- ✅ Summary Cards -->
 <div class="cards">
-  <div id="cardL" class="card gray">
-    <b>Likelihood</b><span>-</span>
-  </div>
-  <div id="cardI" class="card gray">
-    <b>Impact</b><span>-</span>
-  </div>
-  <div id="cardS" class="card gray">
-    <b>Risk Score (L×I)</b><span>-</span>
-  </div>
+  <div id="cardL" class="card gray"><b>Likelihood</b><span>-</span></div>
+  <div id="cardI" class="card gray"><b>Impact</b><span>-</span></div>
+  <div id="cardS" class="card gray"><b>Risk Score (L×I)</b><span>-</span></div>
 </div>
 
 <div id="title" class="matrix-title"></div>
@@ -138,36 +132,39 @@ svg {
 </div>
 
 <script>
+/* ===== Axis Meaning ===== */
 const axisMeaning = {
-  1:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-     impact:"ไม่สามารถสร้างมูลค่าเพิ่มในธุรกิจหลัก (core regulated business) ได้ตามเป้าหมายที่องค์กรกำหนด"},
-  2:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-     impact:"ไม่สามารถสร้างรายได้จากธุรกิจ B2B, B2C, ThaiSkill และรายได้ธุรกิจเกี่ยวเนื่องจากลูกค้าธุรกิจ Data Center ได้ตามเป้าหมาย"},
-  3:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-     impact:"ไม่สามารถสร้าง Grid Capacity และลดก๊าซเรือนกระจกองค์กรได้ตามเป้าหมาย"},
-  4:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-     impact:"ไม่สามารถจัดหาและให้บริการพลังงานไฟฟ้าในนิคมอุตสาหกรรมได้ตามเป้าหมาย"},
-  5:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-     impact:"ไม่สามารถผ่านการประเมินทักษะดิจิทัลหรือ AI ตามเกณฑ์ที่กำหนด"},
-  6:{likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
-     impact:"ไม่สามารถบริหารค่า SAIFI และ SAIDI ของ กฟส.เกาะสมุยได้ตามเป้าหมาย"}
+  1:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถสร้างมูลค่าเพิ่มในธุรกิจหลัก (core regulated business) ได้ตามเป้าหมายที่องค์กรกำหนด"},
+  2:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถสร้างรายได้จากธุรกิจ B2B, B2C, ThaiSkill และรายได้ธุรกิจเกี่ยวเนื่องจากลูกค้าธุรกิจ Data Center ได้ตามเป้าหมาย"},
+  3:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถสร้าง Grid Capacity และลดก๊าซเรือนกระจกองค์กรได้ตามเป้าหมาย"},
+  4:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถดำเนินงานในการจัดหาและให้บริการพลังงานไฟฟ้าในนิคมอุตสาหกรรมได้ตามเป้าหมาย"},
+  5:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถผ่านการประเมินทักษะดิจิทัลหรือ AI ตามเกณฑ์ที่กำหนด"},
+  6:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
+      impact:"ไม่สามารถบริหารค่า SAIFI และ SAIDI ของ กฟส.เกาะสมุยได้ตามเป้าหมาย"}
 };
 
+/* ===== Helpers ===== */
 const clamp=v=>Math.min(5,Math.max(1,v));
 const riskLevel=s=>s<=4?"low":s<=14?"medium":"high";
-const hasQuarterData=q=>q&&q.L!=""&&q.I!=""&&!isNaN(q.L)&&!isNaN(q.I);
+const hasQuarterData=q=>q && q.L!=="" && q.I!=="" && !isNaN(q.L) && !isNaN(q.I);
 
+/* ===== DOM ===== */
 const matrix=document.getElementById("matrix");
 const svg=document.getElementById("svg");
 const rfSel=document.getElementById("rf");
 const qSel=document.getElementById("q");
 const title=document.getElementById("title");
 const axisBox=document.getElementById("axisInfo");
-
 const cardL=document.getElementById("cardL");
 const cardI=document.getElementById("cardI");
 const cardS=document.getElementById("cardS");
 
+/* ===== Matrix Drawing ===== */
 function drawMatrix(){
   matrix.innerHTML="";
   svg.innerHTML=svg.innerHTML.split("</defs>")[0]+"</defs>";
@@ -181,8 +178,12 @@ function drawMatrix(){
 function pos(L,I){return{x:(clamp(L)-.5)*20,y:(5-clamp(I)+.5)*20};}
 function drawArrow(a,b){
   const l=document.createElementNS("http://www.w3.org/2000/svg","line");
-  Object.entries({x1:a.x+"%",y1:a.y+"%",x2:b.x+"%",y2:b.y+"%"}).forEach(([k,v])=>l.setAttribute(k,v));
-  l.setAttribute("stroke","#8e24aa"); l.setAttribute("stroke-width","3");
+  l.setAttribute("x1",a.x+"%");
+  l.setAttribute("y1",a.y+"%");
+  l.setAttribute("x2",b.x+"%");
+  l.setAttribute("y2",b.y+"%");
+  l.setAttribute("stroke","#8e24aa");
+  l.setAttribute("stroke-width","3");
   l.setAttribute("marker-end","url(#arrow)");
   svg.appendChild(l);
 }
@@ -194,7 +195,9 @@ function plot(L,I,h,o){
   matrix.appendChild(p);
 }
 
-const sheetUrl="https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=523652456";
+/* ===== Load Sheet ===== */
+const sheetUrl =
+"https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=523652456";
 let data=[];
 Papa.parse(sheetUrl,{download:true,header:true,skipEmptyLines:true,complete(res){
   data=res.data.map(r=>({
@@ -211,17 +214,21 @@ Papa.parse(sheetUrl,{download:true,header:true,skipEmptyLines:true,complete(res)
   render();
 }});
 
+/* ===== Cards ===== */
 function updateCards(d,q){
   if(!hasQuarterData(d[q])){
-    [cardL,cardI,cardS].forEach(c=>{c.className="card gray";c.querySelector("span").textContent="-";});
+    [cardL,cardI,cardS].forEach(c=>{
+      c.className="card gray"; c.querySelector("span").textContent="-";
+    });
     return;
   }
-  const L=Number(d[q].L), I=Number(d[q].I), S=L*I, lvl=riskLevel(S);
+  const L=+d[q].L,I=+d[q].I,S=L*I,lvl=riskLevel(S);
   cardL.className="card "+lvl; cardL.querySelector("span").textContent=L;
   cardI.className="card "+lvl; cardI.querySelector("span").textContent=I;
   cardS.className="card "+lvl; cardS.querySelector("span").textContent=S;
 }
 
+/* ===== Render ===== */
 function render(){
   drawMatrix();
   const rf=rfSel.value,q=qSel.value;
