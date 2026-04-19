@@ -2,38 +2,94 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <title>Enterprise Risk Dashboard</title>
+  <title>Enterprise Risk Dashboard – v2.03</title>
 
   <!-- ✅ React -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.jsc="https://unpkg.com/react-dom@18/umd/react-domjs</script>
 
-  <!-- ✅ Babel (JSX) -->
+  <!-- ✅ Babel (JSX support) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- ✅ PapaParse -->
+  <!-- ✅ PapaParse (CSV from Google Sheet) -->
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    body { margin:0; font-family: Arial, sans-serif; }
-    .layout { display:flex; min-height:100vh; }
-    .sidebar { width:220px; background:#0f172a; color:white; padding:16px; }
-    .content { flex:1; padding:24px; }
-    button { display:block; width:100%; margin-bottom:8px; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+    }
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 240px;
+      background: #0f172a;
+      color: white;
+      padding: 16px;
+    }
+    .sidebar h3 {
+      margin-top: 0;
+    }
+    .sidebar button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+    }
+    .sidebar button.active {
+      background: #334155;
+    }
+    .content {
+      flex: 1;
+      padding: 24px;
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background: #e5e7eb;
+      text-align: center;
+    }
+    td {
+      vertical-align: middle;
+    }
+    .center {
+      text-align: center;
+    }
   </style>
 </head>
 
 <body>
+  <!-- React mount point -->
   <div id="root"></div>
 
+  <!-- React / JSX code -->
   <script type="text/babel">
-    /************ PATCH A : Load KRI Data ************/
-
+    /********************
+     * Utility
+     ********************/
     function toNumber(val) {
-      if (val === undefined || val === null) return null;
-      return Number(String(val).replace('%','').trim());
+      if (val === undefined || val === null) return "";
+      return String(val).replace("%", "").trim();
     }
 
+    /********************
+     * PATCH A: Load KRI data
+     ********************/
     function useKRIData() {
       const [rows, setRows] = React.useState([]);
       const [loading, setLoading] = React.useState(true);
@@ -43,7 +99,7 @@
           "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&sheet=KRI";
 
         fetch(url)
-          .then(r => r.text())
+          .then(res => res.text())
           .then(csv => {
             const parsed = Papa.parse(csv, {
               header: true,
@@ -57,28 +113,81 @@
       return { rows, loading };
     }
 
+    /********************
+     * App v2.03
+     ********************/
     function App() {
       const [menu, setMenu] = React.useState("kri");
-      const kri = useKRIData();
+
+      // ใช้ PATCH A
+      const { rows: kriRows, loading } = useKRIData();
 
       return (
         <div className="layout">
           <div className="sidebar">
             <h3>Enterprise Risk</h3>
-            <button onClick={() => setMenu("plan")}>Plan</button>
-            <button onClick={() => setMenu("kri")}>KRI</button>
+            <button
+              className={menu === "plan" ? "active" : ""}
+              onClick={() => setMenu("plan")}
+            >
+              Plan
+            </button>
+            <button
+              className={menu === "kri" ? "active" : ""}
+              onClick={() => setMenu("kri")}
+            >
+              KRI
+            </button>
           </div>
 
           <div className="content">
-            <h2>{menu.toUpperCase()}</h2>
-            <p>✅ BASE + PATCH A ทำงานแล้ว</p>
-            <p>KRI rows loaded: {kri.rows.length}</p>
+            {menu === "plan" && (
+              <>
+                <h2>Plan Report</h2>
+                <p>ยังไม่เชื่อมในเวอร์ชันนี้</p>
+              </>
+            )}
+
+            {menu === "kri" && (
+              <>
+                <h2>KRI Report</h2>
+
+                {loading && <p>กำลังโหลดข้อมูล KRI…</p>}
+
+                {!loading && (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>RF</th>
+                        <th>KRI Name</th>
+                        <th>KRI Status</th>
+                        <th>RT</th>
+                        <th>RA</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {kriRows.map((k, i) => (
+                        <tr key={i}>
+                          <td className="center">{k.RF}</td>
+                          <td>{k.KRI_Name ?? k["KRI Name"]}</td>
+                          <td className="center">{toNumber(k.KRI_Status)}</td>
+                          <td className="center">{toNumber(k.RT)}</td>
+                          <td className="center">{toNumber(k.RA)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </>
+            )}
           </div>
         </div>
       );
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    ReactDOM
+      .createRoot(document.getElementById("root"))
+      .render(<App />);
   </script>
 </body>
 </html>
