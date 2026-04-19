@@ -1,266 +1,264 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.00</title>
+  <meta charset="UTF-8" />
+  <title>Enterprise Risk Dashboard – v2.01</title>
 
-<!-- ✅ React -->
-<script src="https://unpkg.com/react@18/umd/react.development.jsript src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- ✅ React -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-<!-- ✅ Babel -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- ✅ Babel (สำหรับ JSX ในไฟล์เดียว) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<!-- ✅ PapaParse (CSV Parser) -->
-<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- ✅ PapaParse (CSV Parser) -->
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
-<style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f3f4f6;
-  }
-  .layout {
-    display: flex;
-    min-height: 100vh;
-  }
-  .sidebar {
-    width: 240px;
-    background: #0f172a;
-    color: white;
-    padding: 16px;
-  }
-  .sidebar h3 {
-    margin-top: 0;
-  }
-  .sidebar button {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 8px;
-    background: none;
-    border: none;
-    color: white;
-    text-align: left;
-    cursor: pointer;
-  }
-  .sidebar button.active {
-    background: #334155;
-  }
-  .content {
-    flex: 1;
-    padding: 24px;
-    background: white;
-  }
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+    }
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 240px;
+      background: #0f172a;
+      color: white;
+      padding: 16px;
+    }
+    .sidebar h3 {
+      margin-top: 0;
+    }
+    .sidebar button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+    }
+    .sidebar button.active {
+      background: #334155;
+    }
+    .content {
+      flex: 1;
+      padding: 24px;
+      background: white;
+    }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 12px;
-  }
-  th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-  }
-  th {
-    background: #e5e7eb;
-    text-align: center;
-  }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      vertical-align: middle;
+    }
+    th {
+      background: #e5e7eb;
+      text-align: center;
+    }
 
-  select {
-    padding: 6px 10px;
-  }
+    select {
+      padding: 6px 10px;
+    }
 
-  /* ===== Risk Meter ===== */
-  .risk-meter {
-    width: 160px;
-    height: 16px;
-    background: #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden;
-    margin: 0 auto;
-  }
-  .risk-meter-fill {
-    height: 100%;
-  }
+    /* ===== Risk Meter ===== */
+    .risk-meter {
+      width: 160px;
+      height: 16px;
+      background: #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 0 auto;
+    }
+    .risk-meter-fill {
+      height: 100%;
+    }
 
-  .text-center {
-    text-align: center;
-  }
-</style>
+    .text-center {
+      text-align: center;
+    }
+  </style>
 </head>
 
 <body>
-<div id="root"></div>
+  <div id="root"></div>
 
-<script type="text/babel">
+  <script type="text/babel">
+    /* =====================================================
+       Hook: Load KRI data from Google Sheet
+       ===================================================== */
+    function useKRIData() {
+      const [rows, setRows] = React.useState([]);
+      const [loading, setLoading] = React.useState(true);
+      const [error, setError] = React.useState(null);
 
-/* =====================================================
-   Hook : KRI Data
-   ===================================================== */
-function useKRIData() {
-  const [rows, setRows] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
+      React.useEffect(() => {
+        const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
+        const sheetName = "KRI";
+        const url =
+          `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=${sheetName}`;
 
-  React.useEffect(() => {
-    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
-    const sheetName = "KRI";
+        fetch(url)
+          .then(res => {
+            if (!res.ok) throw new Error("โหลดข้อมูล KRI ไม่ได้");
+            return res.text();
+          })
+          .then(csv => {
+            const parsed = Papa.parse(csv, {
+              header: true,
+              skipEmptyLines: true
+            });
+            setRows(parsed.data);
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error(err);
+            setError("เกิดข้อผิดพลาดในการโหลดข้อมูล KRI");
+            setLoading(false);
+          });
+      }, []);
 
-    const url =
-      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=${sheetName}`;
+      return { rows, loading, error };
+    }
 
-    fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error("โหลดข้อมูล KRI ไม่ได้");
-        return res.text();
-      })
-      .then(csv => {
-        const parsed = Papa.parse(csv, {
-          header: true,
-          skipEmptyLines: true
-        });
-        setRows(parsed.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setError("เกิดข้อผิดพลาดในการโหลดข้อมูล KRI");
-        setLoading(false);
-      });
-  }, []);
+    /* =====================================================
+       Risk Color Logic
+       ===================================================== */
+    function getRiskColor(status, rt, ra) {
+      if (status < rt) return "#dc2626";   // แดง
+      if (status < ra) return "#f59e0b";   // เหลือง
+      return "#16a34a";                    // เขียว
+    }
 
-  return { rows, loading, error };
-}
+    /* =====================================================
+       App : v2.01
+       ===================================================== */
+    function App() {
+      const [menu, setMenu] = React.useState("kri");
 
-/* =====================================================
-   Risk Color Logic
-   ===================================================== */
-function getRiskColor(status, rt, ra) {
-  if (status < rt) return "#dc2626";   // แดง
-  if (status < ra) return "#f59e0b";   // เหลือง
-  return "#16a34a";                    // เขียว
-}
+      const { rows: kriRows, loading: kriLoading, error: kriError } = useKRIData();
+      const [rfFilter, setRfFilter] = React.useState("ALL");
 
-/* =====================================================
-   App : v2.00
-   ===================================================== */
-function App() {
-  const [menu, setMenu] = React.useState("kri");
+      const rfList = React.useMemo(() => {
+        const set = new Set(kriRows.map(r => r.RF));
+        return ["ALL", ...Array.from(set)];
+      }, [kriRows]);
 
-  const { rows: kriRows, loading: kriLoading, error: kriError } = useKRIData();
-  const [rfFilter, setRfFilter] = React.useState("ALL");
+      const filteredKRI = kriRows.filter(r =>
+        rfFilter === "ALL" ? true : r.RF === rfFilter
+      );
 
-  const rfList = React.useMemo(() => {
-    const set = new Set(kriRows.map(r => r.RF));
-    return ["ALL", ...Array.from(set)];
-  }, [kriRows]);
+      return (
+        <div className="layout">
+          <div className="sidebar">
+            <h3>Enterprise Risk</h3>
+            <button
+              className={menu === "plan" ? "active" : ""}
+              onClick={() => setMenu("plan")}
+            >
+              Plan Report (v1)
+            </button>
+            <button
+              className={menu === "kri" ? "active" : ""}
+              onClick={() => setMenu("kri")}
+            >
+              KRI Report (v2.01)
+            </button>
+          </div>
 
-  const filteredKRI = kriRows.filter(r =>
-    rfFilter === "ALL" ? true : r.RF === rfFilter
-  );
-
-  return (
-    <div className="layout">
-      <div className="sidebar">
-        <h3>Enterprise Risk</h3>
-        <button
-          className={menu === "plan" ? "active" : ""}
-          onClick={() => setMenu("plan")}
-        >
-          Plan Report (v1)
-        </button>
-        <button
-          className={menu === "kri" ? "active" : ""}
-          onClick={() => setMenu("kri")}
-        >
-          KRI Report (v2.00)
-        </button>
-      </div>
-
-      <div className="content">
-        {/* ================= PLAN ================= */}
-        {menu === "plan" && (
-          <>
-            <h2>Plan Report</h2>
-            <p>ใช้โค้ด v1.0.x ของคุณ (ไม่กระทบใน v2.00)</p>
-          </>
-        )}
-
-        {/* ================= KRI ================= */}
-        {menu === "kri" && (
-          <>
-            <h2>KRI Report</h2>
-
-            {kriLoading && <p>กำลังโหลดข้อมูล KRI…</p>}
-            {kriError && <p style={{ color: "red" }}>{kriError}</p>}
-
-            {!kriLoading && !kriError && (
+          <div className="content">
+            {/* ================= PLAN ================= */}
+            {menu === "plan" && (
               <>
-                <div style={{ marginBottom: "12px" }}>
-                  <label>RF: </label>
-                  <select
-                    value={rfFilter}
-                    onChange={e => setRfFilter(e.target.value)}
-                  >
-                    {rfList.map(rf => (
-                      <option key={rf} value={rf}>{rf}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <table>
-                  <thead>
-                    <tr>
-                      <th>RF</th>
-                      <th>KRI</th>
-                      <th>KRI Status</th>
-                      <th>RT</th>
-                      <th>RA</th>
-                      <th>Risk Meter</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredKRI.map((k, i) => {
-                      const status = Number(k.KRI_Status);
-                      const rt = Number(k.RT);
-                      const ra = Number(k.RA);
-                      const color = getRiskColor(status, rt, ra);
-
-                      return (
-                        <tr key={i}>
-                          <td className="text-center">{k.RF}</td>
-                          <td>{k.KRI_Name}</td>
-                          <td className="text-center">{status}</td>
-                          <td className="text-center">{rt}</td>
-                          <td className="text-center">{ra}</td>
-                          <td>
-                            <div className="risk-meter">
-                              <div
-                                className="risk-meter-fill"
-                                style={{
-                                  width: Math.min(status, 100) + "%",
-                                  background: color
-                                }}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <h2>Plan Report</h2>
+                <p>ใช้โค้ด v1.x ของคุณ (ไม่ปรับใน v2.01)</p>
               </>
             )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
+            {/* ================= KRI ================= */}
+            {menu === "kri" && (
+              <>
+                <h2>KRI Report</h2>
 
-</script>
+                {kriLoading && <p>กำลังโหลดข้อมูล KRI…</p>}
+                {kriError && <p style={{ color: "red" }}>{kriError}</p>}
+
+                {!kriLoading && !kriError && (
+                  <>
+                    <div style={{ marginBottom: "12px" }}>
+                      <label>RF: </label>
+                      <select
+                        value={rfFilter}
+                        onChange={e => setRfFilter(e.target.value)}
+                      >
+                        {rfList.map(rf => (
+                          <option key={rf} value={rf}>{rf}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>RF</th>
+                          <th>KRI</th>
+                          <th>KRI Status</th>
+                          <th>RT</th>
+                          <th>RA</th>
+                          <th>Risk Meter</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredKRI.map((k, i) => {
+                          const status = Number(k.KRI_Status);
+                          const rt = Number(k.RT);
+                          const ra = Number(k.RA);
+                          const color = getRiskColor(status, rt, ra);
+
+                          return (
+                            <tr key={i}>
+                              <td className="text-center">{k.RF}</td>
+                              <td>{k.KRI_Name}</td>
+                              <td className="text-center">{status}</td>
+                              <td className="text-center">{rt}</td>
+                              <td className="text-center">{ra}</td>
+                              <td>
+                                <div className="risk-meter">
+                                  <div
+                                    className="risk-meter-fill"
+                                    style={{
+                                      width: Math.min(status, 100) + "%",
+                                      background: color
+                                    }}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
 </body>
 </html>
-``
