@@ -1,47 +1,209 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.02 BASE</title>
+  <meta charset="UTF-8">
+  <title>Enterprise Risk Dashboard – v2.02</title>
 
-<!-- ✅ React -->
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- ✅ React -->
+  <script src="https://unpkg.com/react@18/umd/react.de  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js<!-- ✅ Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<!-- ✅ Babel -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- ✅ PapaParse -->
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
-<!-- ✅ PapaParse -->
-<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+    .layout { display:flex; min-height:100vh; }
 
-<style>
-body { margin:0; font-family: Arial; }
-.sidebar { width:220px; background:#0f172a; color:white; padding:16px; }
-.layout { display:flex; min-height:100vh; }
-.content { padding:24px; flex:1; }
-</style>
+    .sidebar {
+      width:240px; background:#0f172a; color:white; padding:16px;
+    }
+    .sidebar h3 { margin-top:0; }
+    .sidebar button {
+      width:100%; padding:10px; margin-bottom:8px;
+      background:none; border:none; color:white;
+      text-align:left; cursor:pointer;
+    }
+    .sidebar button.active { background:#334155; }
+
+    .content { flex:1; padding:24px; background:white; }
+
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { border:1px solid #ddd; padding:8px; }
+    th { background:#e5e7eb; text-align:center; }
+    .center { text-align:center; }
+
+    select { padding:6px 10px; }
+
+    .risk-meter {
+      width:160px; height:16px;
+      background:#e5e7eb;
+      border-radius:8px;
+      overflow:hidden;
+      margin:auto;
+    }
+    .risk-meter-fill { height:100%; }
+  </style>
 </head>
 
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
+/* ================= Utilities ================= */
+function toNumber(val){
+  if (val === undefined || val === null) return NaN;
+  return Number(String(val).replace('%','').replace(/\s/g,''));
+}
+
+function getRiskColor(status, rt, ra){
+  if (isNaN(status) || isNaN(rt) || isNaN(ra)) return "#9ca3af"; // เทา
+  if (status < rt) return "#dc2626";   // แดง
+  if (status < ra) return "#f59e0b";   // เหลือง
+  return "#16a34a";                    // เขียว
+}
+
+/* ================= KRI Hook ================= */
+function useKRIData(){
+  const [rows, setRows] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(()=>{
+    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
+    const url =
+      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=KRI`;
+
+    fetch(url)
+      .then(r => r.text())
+      .then(csv => {
+        const parsed = Papa.parse(csv, {
+          header: true,
+          skipEmptyLines: true
+        });
+        setRows(parsed.data);
+        setLoading(false);
+      });
+  }, []);
+
+  return { rows, loading };
+}
+
+/* ================= App v2.02 ================= */
 function App(){
-  const [menu,setMenu] = React.useState("kri");
+  const [menu, setMenu] = React.useState("kri");
+
+  const { rows: kriRows, loading } = useKRIData();
+  const [rfFilter, setRfFilter] = React.useState("ALL");
+
+  const rfList = React.useMemo(()=>{
+    const s = new Set(kriRows.map(r => r.RF));
+    return ["ALL", ...Array.from(s)];
+  }, [kriRows]);
+
+  const filteredKRI = kriRows.filter(r =>
+    rfFilter === "ALL" ? true : r.RF === rfFilter
+  );
+
   return (
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button onClick={()=>setMenu("plan")}>Plan</button>
-        <button onClick={()=>setMenu("kri")}>KRI</button>
+        <button
+          className={menu==="plan"?"active":""}
+          onClick={()=>setMenu("plan")}
+        >
+          Plan
+        </button>
+        <button
+          className={menu==="kri"?"active":""}
+          onClick={()=>setMenu("kri")}
+        >
+          KRI Report (v2.02)
+        </button>
       </div>
+
       <div className="content">
-        <h2>{menu}</h2>
-        <p>✅ v2.02 base ทำงานแล้ว</p>
+        {menu==="plan" && (
+          <>
+            <h2>Plan Report</h2>
+            <p>ใช้เวอร์ชัน v1.x ของคุณ</p>
+          </>
+        )}
+
+        {menu==="kri" && (
+          <>
+            <h2>KRI Report</h2>
+
+            {loading && <p>กำลังโหลดข้อมูล…</p>}
+
+            {!loading && (
+              <>
+                <label>RF: </label>
+                <select
+                  value={rfFilter}
+                  onChange={e=>setRfFilter(e.target.value)}
+                >
+                  {rfList.map(rf=>(
+                    <option key={rf} value={rf}>{rf}</option>
+                  ))}
+                </select>
+
+                <table>
+                  <thead>
+                    <tr>
+                      <th>RF</th>
+                      <th>KRI</th>
+                      <th>KRI Status</th>
+                      <th>RT</th>
+                      <th>RA</th>
+                      <th>Risk Meter</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredKRI.map((k,i)=>{
+                      const status = toNumber(
+                        k.KRI_Status ?? k["KRI Status"]
+                      );
+                      const rt = toNumber(
+                        k.RT ?? k["RT (%)"]
+                      );
+                      const ra = toNumber(
+                        k.RA ?? k["RA (%)"]
+                      );
+                      const color = getRiskColor(status, rt, ra);
+
+                      return (
+                        <tr key={i}>
+                          <td className="center">{k.RF}</td>
+                          <td>{k.KRI_Name ?? k["KRI Name"]}</td>
+                          <td className="center">{isNaN(status)?"-":status}</td>
+                          <td className="center">{isNaN(rt)?"-":rt}</td>
+                          <td className="center">{isNaN(ra)?"-":ra}</td>
+                          <td>
+                            <div className="risk-meter">
+                              <div
+                                className="risk-meter-fill"
+                                style={{
+                                  width: isNaN(status) ? "0%" : Math.min(status,100)+"%",
+                                  background: color
+                                }}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
 }
+
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
