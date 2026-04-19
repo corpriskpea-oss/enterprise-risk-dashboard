@@ -2,12 +2,13 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.0</title>
+<title>Enterprise Risk Dashboard</title>
 
 <!-- ✅ React -->
-<script src="https://unpkg.com/react@18/umd/react.development.jsript src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-<!-- ✅ Babel -->
+<!-- ✅ Babel (ให้ใช้ JSX ได้ในไฟล์เดียว) -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <!-- ✅ PapaParse -->
@@ -21,31 +22,10 @@
   }
   .sidebar button {
     width:100%; padding:10px; margin-bottom:8px;
-    background:none; border:none; color:white;
-    text-align:left; cursor:pointer;
+    background:none; border:none; color:white; text-align:left; cursor:pointer;
   }
   .sidebar button.active { background:#334155; }
-
-  .content { flex:1; padding:24px; background:white; }
-
-  table { width:100%; border-collapse:collapse; margin-top:12px; }
-  th, td { border:1px solid #ddd; padding:8px; }
-  th { background:#e5e7eb; text-align:center; }
-
-  select { padding:6px 8px; }
-
-  /* ===== Risk Meter ===== */
-  .meter {
-    width:180px;
-    height:16px;
-    background:#e5e7eb;
-    border-radius:8px;
-    overflow:hidden;
-    margin-top:4px;
-  }
-  .meter-fill {
-    height:100%;
-  }
+  .content { flex:1; padding:24px; background:#fff; }
 </style>
 </head>
 
@@ -53,183 +33,26 @@
 <div id="root"></div>
 
 <script type="text/babel">
-
-/* ==================== Hook: Plan ==================== */
-function usePlanData() {
-  const [rows, setRows] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
-    const url =
-      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
-
-    fetch(url)
-      .then(res => res.text())
-      .then(csv => {
-        const parsed = Papa.parse(csv, {
-          header: true,
-          skipEmptyLines: true
-        });
-        setRows(parsed.data);
-        setLoading(false);
-      });
-  }, []);
-
-  return { rows, loading };
-}
-
-/* ==================== Hook: KRI ==================== */
-function useKRIData() {
-  const [rows, setRows] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
-    const url =
-      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=KRI`;
-
-    fetch(url)
-      .then(res => res.text())
-      .then(csv => {
-        const parsed = Papa.parse(csv, {
-          header: true,
-          skipEmptyLines: true
-        });
-        setRows(parsed.data);
-        setLoading(false);
-      });
-  }, []);
-
-  return { rows, loading };
-}
-
-/* ==================== Risk Meter Helper ==================== */
-function getRiskColor(status, rt, ra) {
-  if (status < rt) return "#dc2626";      // red
-  if (status < ra) return "#f59e0b";      // yellow
-  return "#16a34a";                       // green
-}
-
-/* ==================== App ==================== */
 function App() {
-  const [menu, setMenu] = React.useState("plan");
-
-  const { rows: planRows, loading: planLoading } = usePlanData();
-  const { rows: kriRows, loading: kriLoading } = useKRIData();
-
-  /* ===== KRI RF Filter ===== */
-  const [kriRF, setKriRF] = React.useState("ALL");
-
-  const kriRFList = React.useMemo(() => {
-    const set = new Set(kriRows.map(r => r.RF));
-    return ["ALL", ...Array.from(set)];
-  }, [kriRows]);
-
-  const filteredKRI = kriRows.filter(r =>
-    kriRF === "ALL" ? true : r.RF === kriRF
-  );
-
+  const [menu, setMenu] = React.useState("kri");
   return (
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button
-          className={menu==="plan"?"active":""}
-          onClick={()=>setMenu("plan")}
-        >
-          Plan Report (v1.0.2)
-        </button>
-        <button
-          className={menu==="kri"?"active":""}
-          onClick={()=>setMenu("kri")}
-        >
-          KRI Report (v2.0)
-        </button>
+        <button className={menu==="plan"?"active":""} onClick={()=>setMenu("plan")}>Plan</button>
+        <button className={menu==="kri"?"active":""} onClick={()=>setMenu("kri")}>KRI</button>
       </div>
-
       <div className="content">
-        {/* ==================== PLAN ==================== */}
-        {menu==="plan" && (
-          <>
-            <h2>Plan Report</h2>
-            {planLoading ? <p>กำลังโหลด…</p> : <p>ใช้ข้อมูล v1.0.2 เดิม</p>}
-          </>
-        )}
-
-        {/* ==================== KRI ==================== */}
-        {menu==="kri" && (
-          <>
-            <h2>KRI Report</h2>
-
-            {kriLoading && <p>กำลังโหลดข้อมูล KRI…</p>}
-
-            {!kriLoading && (
-              <>
-                <div style={{ marginBottom: "12px" }}>
-                  <label>RF: </label>
-                  <select
-                    value={kriRF}
-                    onChange={(e)=>setKriRF(e.target.value)}
-                  >
-                    {kriRFList.map(rf => (
-                      <option key={rf} value={rf}>{rf}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <table>
-                  <thead>
-                    <tr>
-                      <th>RF</th>
-                      <th>KRI</th>
-                      <th>KRI Status</th>
-                      <th>RT</th>
-                      <th>RA</th>
-                      <th>Risk Meter</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredKRI.map((k, i) => {
-                      const status = Number(k.KRI_Status);
-                      const rt = Number(k.RT);
-                      const ra = Number(k.RA);
-                      const color = getRiskColor(status, rt, ra);
-
-                      return (
-                        <tr key={i}>
-                          <td style={{ textAlign:"center" }}>{k.RF}</td>
-                          <td>{k.KRI_Name}</td>
-                          <td style={{ textAlign:"center" }}>{status}</td>
-                          <td style={{ textAlign:"center" }}>{rt}</td>
-                          <td style={{ textAlign:"center" }}>{ra}</td>
-                          <td>
-                            <div className="meter">
-                              <div
-                                className="meter-fill"
-                                style={{
-                                  width: Math.min(status, 100) + "%",
-                                  background: color
-                                }}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </>
-            )}
-          </>
-        )}
+        <h2>{menu.toUpperCase()}</h2>
+        <p>✅ ถ้าเห็นข้อความนี้ แปลว่า React โหลดสมบูรณ์ ไม่หน้าขาว</p>
       </div>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
 </script>
 </body>
 </html>
+``
