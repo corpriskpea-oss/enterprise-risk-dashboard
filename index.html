@@ -5,29 +5,95 @@
   <title>Enterprise Risk Dashboard</title>
 
   <!-- ✅ React -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react@18/umdpment.js</script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-  <!-- ✅ Babel -->
+  <!-- ✅ Babel (สำหรับ JSX) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- ✅ PapaParse -->
+  <!-- ✅ PapaParse (อ่าน CSV จาก Google Sheet) -->
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    body { margin:0; font-family: Arial, sans-serif; }
-    .layout { display:flex; min-height:100vh; }
-    .sidebar { width:220px; background:#0f172a; color:white; padding:16px; }
-    .content { flex:1; padding:24px; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+    }
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 240px;
+      background: #0f172a;
+      color: white;
+      padding: 16px;
+    }
+    .sidebar button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+    }
+    .content {
+      flex: 1;
+      padding: 24px;
+      background: white;
+    }
   </style>
 </head>
 
 <body>
+  <!-- React mount point -->
   <div id="root"></div>
 
+  <!-- ✅ React / JSX code -->
   <script type="text/babel">
+    /************ PATCH A : Load KRI Data ************/
+
+    // utility แปลงค่า (กัน % / space)
+    function toNumber(val) {
+      if (val === undefined || val === null) return null;
+      return Number(String(val).replace('%', '').trim());
+    }
+
+    // hook โหลดข้อมูล KRI
+    function useKRIData() {
+      const [rows, setRows] = React.useState([]);
+      const [loading, setLoading] = React.useState(true);
+
+      React.useEffect(() => {
+        const url =
+          "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&sheet=KRI";
+
+        fetch(url)
+          .then(res => res.text())
+          .then(csv => {
+            const parsed = Papa.parse(csv, {
+              header: true,
+              skipEmptyLines: true
+            });
+            setRows(parsed.data);
+            setLoading(false);
+          });
+      }, []);
+
+      return { rows, loading };
+    }
+
+    /************ BASE App ************/
     function App() {
       const [menu, setMenu] = React.useState("kri");
+
+      // เรียก PATCH A (ยังไม่ render)
+      const kri = useKRIData();
+      console.log("KRI loaded rows:", kri.rows);
+
       return (
         <div className="layout">
           <div className="sidebar">
@@ -35,9 +101,11 @@
             <button onClick={() => setMenu("plan")}>Plan</button>
             <button onClick={() => setMenu("kri")}>KRI</button>
           </div>
+
           <div className="content">
             <h2>{menu.toUpperCase()}</h2>
-            <p>✅ BASE ทำงานแล้ว</p>
+            <p>✅ BASE + PATCH A ทำงานแล้ว</p>
+            <p>KRI rows loaded: {kri.rows.length}</p>
           </div>
         </div>
       );
@@ -49,4 +117,3 @@
   </script>
 </body>
 </html>
-``
