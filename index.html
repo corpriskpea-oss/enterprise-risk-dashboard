@@ -1,92 +1,91 @@
-/************** PATCH A + B : KRI ****************/
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enterprise Risk Dashboard</title>
 
-/* Utility: แปลงค่าเป็นตัวเลข (กัน % / space) */
-function toNumber(val) {
-  if (val === undefined || val === null) return "";
-  return String(val).replace("%", "").trim();
-}
+  <!-- ===================== -->
+  <!-- 1. JavaScript Libraries -->
+  <!-- ===================== -->
 
-/* Hook: โหลดข้อมูล KRI จาก Google Sheet */
-function useKRIData() {
-  const [rows, setRows] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.development src="https://unpkg.com/react-dom@18/umd/react-dom.de
+  <!-- Babel (สำหรับ JSX) -->
+  <script src="https://unpkg.com/@babel/standalone/babel-- PapaParse (CSV Parser) -->
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse-- ===================== -->
+  <!-- 2. CSS -->
+  <!-- ===================== -->
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+    }
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 240px;
+      background: #0f172a;
+      color: white;
+      padding: 16px;
+    }
+    .sidebar h3 {
+      margin-top: 0;
+    }
+    .sidebar button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+    }
+    .content {
+      flex: 1;
+      padding: 24px;
+      background: white;
+    }
+  </style>
+</head>
 
-  React.useEffect(() => {
-    const url =
-      "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&sheet=KRI";
+<body>
+  <!-- ===================== -->
+  <!-- 3. React Mount Point -->
+  <!-- ===================== -->
+  <div id="root"></div>
 
-    fetch(url)
-      .then(res => res.text())
-      .then(csv => {
-        const parsed = Papa.parse(csv, {
-          header: true,
-          skipEmptyLines: true,
-        });
-        setRows(parsed.data);
-        setLoading(false);
-      });
-  }, []);
+  <!-- ===================== -->
+  <!-- 4. React / JSX Code -->
+  <!-- ===================== -->
+  <script type="text/babel">
+    // === React code must be FULLY inside this script ===
 
-  return { rows, loading };
-}
+    function App() {
+      const [menu, setMenu] = React.useState("kri");
 
-/* ========= App ========= */
-function App() {
-  const [menu, setMenu] = React.useState("kri");
-  const { rows: kriRows, loading } = useKRIData();
+      return (
+        <div className="layout">
+          <div className="sidebar">
+            <h3>Enterprise Risk</h3>
+            <button onClick={() => setMenu("plan")}>Plan</button>
+            <button onClick={() => setMenu("kri")}>KRI</button>
+          </div>
 
-  return (
-    <div className="layout">
-      <div className="sidebar">
-        <h3>Enterprise Risk</h3>
-        <button onClick={() => setMenu("plan")}>Plan</button>
-        <button onClick={() => setMenu("kri")}>KRI</button>
-      </div>
+          <div className="content">
+            <h2>{menu.toUpperCase()}</h2>
+            <p>✅ HTML 구조 정상 / React 동작 확인</p>
+          </div>
+        </div>
+      );
+    }
 
-      <div className="content">
-        {menu === "plan" && (
-          <>
-            <h2>Plan Report</h2>
-            <p>ยังไม่เชื่อมใน PATCH นี้</p>
-          </>
-        )}
-
-        {menu === "kri" && (
-          <>
-            <h2>KRI Report</h2>
-
-            {loading && <p>กำลังโหลดข้อมูล KRI…</p>}
-
-            {!loading && (
-              <table>
-                <thead>
-                  <tr>
-                    <th>RF</th>
-                    <th>KRI Name</th>
-                    <th>KRI Status</th>
-                    <th>RT</th>
-                    <th>RA</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {kriRows.map((k, i) => (
-                    <tr key={i}>
-                      <td>{k.RF}</td>
-                      <td>{k.KRI_Name ?? k["KRI Name"]}</td>
-                      <td>{toNumber(k.KRI_Status)}</td>
-                      <td>{toNumber(k.RT)}</td>
-                      <td>{toNumber(k.RA)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* Render */
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    ReactDOM.createRoot(
+      document.getElementById("root")
+    ).render(<App />);
+  </script>
+</body>
+</html>
