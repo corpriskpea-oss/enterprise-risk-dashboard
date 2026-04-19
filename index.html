@@ -1,143 +1,218 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <title>Enterprise Risk Dashboard</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-</head>
-  <style>
-    body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
-    .layout { display:flex; min-height:100vh; }
-    .sidebar { width:240px; background:#0f172a; color:white; padding:16px; }
-    .sidebar h3 { margin-top:0; }
-    .sidebar button{
-      width:100%; padding:10px; margin-bottom:8px;
-      background:none; border:none; color:white; text-align:left; cursor:pointer;
-    }
-    .sidebar button.active{ background:#334155; }
-    .content { flex:1; padding:24px; background:white; }
+<meta charset="UTF-8" />
+<title>Enterprise Risk Dashboard – v1.0.2 (Plan)</title>
 
-    table{ width:100%; border-collapse:collapse; margin-top:16px; }
-    th, td{ border:1px solid #ddd; padding:8px; }
-    th{ background:#e5e7eb; text-align:center; }
-    .center{ text-align:center; }
-  </style>
+<!-- React -->
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+<!-- Babel -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<!-- PapaParse -->
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+  body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+  .layout { display:flex; min-height:100vh; }
+  .sidebar {
+    width:240px; background:#0f172a; color:white; padding:16px;
+  }
+  .sidebar button {
+    width:100%; padding:10px; margin-bottom:8px;
+    background:none; border:none; color:white;
+    text-align:left; cursor:pointer;
+  }
+  .sidebar button.active { background:#334155; }
+
+  .content { flex:1; padding:24px; background:white; }
+
+  table { width:100%; border-collapse:collapse; margin-top:12px; }
+  th, td { border:1px solid #ddd; padding:8px; vertical-align:top; }
+  th { background:#e5e7eb; text-align:center; }
+
+  select, button {
+    padding:6px 10px; margin-right:8px;
+  }
+
+  .toolbar { margin-bottom:12px; }
+</style>
 </head>
 
 <body>
-  <div id="root"></div>
+<div id="root"></div>
 
-  <script type="text/babel">
-    /********************
-     * Utility
-     ********************/
-    function toNumber(val) {
-      if (val === undefined || val === null) return "";
-      return String(val).replace("%", "").trim();
-    }
+<script type="text/babel">
 
-    /********************
-     * PATCH A: Load KRI data from KRI_EXPORT
-     ********************/
-    function useKRIData() {
-      const [rows, setRows] = React.useState([]);
-      const [loading, setLoading] = React.useState(true);
+/* ==================== Data Hook ==================== */
+function usePlanData() {
+  const [rows, setRows] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
 
-      React.useEffect(() => {
-        const url =
-          "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&sheet=KRI_EXPORT";
+  React.useEffect(() => {
+    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
+    const url =
+      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
 
-        fetch(url)
-          .then(res => res.text())
-          .then(csv => {
-            const parsed = Papa.parse(csv, {
-              header: true,
-              skipEmptyLines: true
-            });
-            setRows(parsed.data);
-            setLoading(false);
-          });
-      }, []);
+    fetch(url)
+      .then(res => res.text())
+      .then(csv => {
+        const parsed = Papa.parse(csv, {
+          header: true,
+          skipEmptyLines: true,
+        });
+        setRows(parsed.data);
+        setLoading(false);
+      });
+  }, []);
 
-      return { rows, loading };
-    }
+  return { rows, loading };
+}
 
-    /********************
-     * App v2.03 (PATCH B: render KRI table)
-     ********************/
-    function App() {
-      const [menu, setMenu] = React.useState("kri");
-      const { rows: kriRows, loading } = useKRIData();
+/* ==================== App ==================== */
+function App() {
+  const { rows, loading } = usePlanData();
 
-      return (
-        <div className="layout">
-          <div className="sidebar">
-            <h3>Enterprise Risk</h3>
-            <button
-              className={menu==="plan"?"active":""}
-              onClick={()=>setMenu("plan")}
-            >
-              Plan
-            </button>
-            <button
-              className={menu==="kri"?"active":""}
-              onClick={()=>setMenu("kri")}
-            >
-              KRI
-            </button>
-          </div>
+  const [rfFilter, setRfFilter] = React.useState("ALL");
+  const [selectedPlan, setSelectedPlan] = React.useState(null);
+  const [quarter, setQuarter] = React.useState("Q1");
 
-          <div className="content">
-            {menu==="plan" && (
-              <>
-                <h2>Plan Report</h2>
-                <p>ยังไม่เชื่อมในเวอร์ชันนี้</p>
-              </>
-            )}
+  /* ---------- RF list ---------- */
+  const rfList = React.useMemo(() => {
+    const set = new Set(rows.map(r => r.RF_GroupName));
+    return ["ALL", ...Array.from(set)];
+  }, [rows]);
 
-            {menu==="kri" && (
-              <>
-                <h2>KRI Report</h2>
+  /* ---------- Group by Plan ---------- */
+  const planGroups = React.useMemo(() => {
+    const map = {};
+    rows.forEach(r => {
+      if (rfFilter !== "ALL" && r.RF_GroupName !== rfFilter) return;
+      if (!map[r.PlanName]) map[r.PlanName] = [];
+      map[r.PlanName].push(r);
+    });
+    return map;
+  }, [rows, rfFilter]);
 
-                {loading && <p>กำลังโหลดข้อมูล KRI…</p>}
+  /* ---------- Quarter field names ---------- */
+  const detailKey = `${quarter}_Detail`;
+  const problemKey = `${quarter}_Problem`;
+  const solutionKey = `${quarter}_Solution`;
 
-                {!loading && (
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>RF</th>
-                        <th>KRI Name</th>
-                        <th>KRI Status</th>
-                        <th>RT</th>
-                        <th>RA</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {kriRows.map((k, i) => (
-                        <tr key={i}>
-                          <td className="center">{k.RF}</td>
-                          <td>{k.KRI_Name ?? k["KRI Name"]}</td>
-                          <td className="center">{toNumber(k.KRI_Status)}</td>
-                          <td className="center">{toNumber(k.RT)}</td>
-                          <td className="center">{toNumber(k.RA)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      );
-    }
+  return (
+    <div className="layout">
+      <div className="sidebar">
+        <h3>Enterprise Risk</h3>
+        <button className="active">Plan Report v1.0.2</button>
+      </div>
 
-    ReactDOM
-      .createRoot(document.getElementById("root"))
-      .render(<App />);
-  </script>
+      <div className="content">
+        <h2>Plan Report</h2>
+
+        {loading && <p>กำลังโหลดข้อมูล…</p>}
+
+        {!loading && !selectedPlan && (
+          <>
+            {/* ---------- RF Filter ---------- */}
+            <div className="toolbar">
+              <label>RF Group: </label>
+              <select
+                value={rfFilter}
+                onChange={e => setRfFilter(e.target.value)}
+              >
+                {rfList.map(rf => (
+                  <option key={rf} value={rf}>{rf}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* ---------- Plan Summary Table ---------- */}
+            <table>
+              <thead>
+                <tr>
+                  <th>แผนงาน</th>
+                  <th>RF</th>
+                  <th>ผลการดำเนินงาน (%)</th>
+                  <th>เป้าหมาย</th>
+                  <th>สถานะ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(planGroups).map(([planName, items]) => {
+                  const p = items[0];
+                  return (
+                    <tr key={planName}
+                        style={{ cursor:"pointer" }}
+                        onClick={() => setSelectedPlan({ name: planName, items })}>
+                      <td>{planName}</td>
+                      <td style={{ textAlign:"center" }}>{p.RF_GroupName}</td>
+                      <td style={{ textAlign:"center" }}>{p.ResultPercent}</td>
+                      <td style={{ textAlign:"center" }}>{p.TargetLevel5}</td>
+                      <td>{p.Status_Combined}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* ==================== Drill-down ==================== */}
+        {selectedPlan && (
+          <>
+            <button onClick={() => setSelectedPlan(null)}>← กลับ</button>
+            <h3>{selectedPlan.name}</h3>
+
+            {/* Quarter Filter */}
+            <div className="toolbar">
+              <label>ไตรมาส: </label>
+              {["Q1","Q2","Q3","Q4"].map(q => (
+                <button
+                  key={q}
+                  onClick={() => setQuarter(q)}
+                  style={{
+                    fontWeight: quarter === q ? "bold" : "normal"
+                  }}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
+            {/* Activity Table */}
+            <table>
+              <thead>
+                <tr>
+                  <th>ลำดับ</th>
+                  <th>กิจกรรม</th>
+                  <th>รายละเอียด</th>
+                  <th>ปัญหา / อุปสรรค</th>
+                  <th>แนวทางการแก้ไข</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedPlan.items.map((a, i) => (
+                  <tr key={i}>
+                    <td style={{ textAlign:"center" }}>{a.ActivityOrder}</td>
+                    <td>{a.ActivityName}</td>
+                    <td>{a[detailKey]}</td>
+                    <td>{a[problemKey]}</td>
+                    <td>{a[solutionKey]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+</script>
 </body>
-</html>  
+</html>
