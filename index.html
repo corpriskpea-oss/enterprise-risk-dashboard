@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v1.0.2 (Plan)</title>
+<title>Enterprise Risk Dashboard – v2.00 (KRI)</title>
 
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -15,29 +15,68 @@
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-  body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
-  .layout { display:flex; min-height:100vh; }
-  .sidebar {
-    width:240px; background:#0f172a; color:white; padding:16px;
-  }
-  .sidebar button {
-    width:100%; padding:10px; margin-bottom:8px;
-    background:none; border:none; color:white;
-    text-align:left; cursor:pointer;
-  }
-  .sidebar button.active { background:#334155; }
-
-  .content { flex:1; padding:24px; background:white; }
-
-  table { width:100%; border-collapse:collapse; margin-top:12px; }
-  th, td { border:1px solid #ddd; padding:8px; vertical-align:top; }
-  th { background:#e5e7eb; text-align:center; }
-
-  select, button {
-    padding:6px 10px; margin-right:8px;
-  }
-
-  .toolbar { margin-bottom:12px; }
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f3f4f6;
+}
+.layout {
+  display:flex;
+  min-height:100vh;
+}
+.sidebar {
+  width:240px;
+  background:#0f172a;
+  color:white;
+  padding:16px;
+}
+.sidebar button {
+  width:100%;
+  padding:10px;
+  margin-bottom:8px;
+  background:none;
+  border:none;
+  color:white;
+  text-align:left;
+  cursor:pointer;
+}
+.sidebar button.active {
+  background:#334155;
+}
+.content {
+  flex:1;
+  padding:24px;
+  background:white;
+}
+.toolbar {
+  margin-bottom:16px;
+}
+select {
+  padding:6px 10px;
+}
+table {
+  width:100%;
+  border-collapse:collapse;
+}
+th, td {
+  border:1px solid #ddd;
+  padding:8px;
+  vertical-align:top;
+}
+th {
+  background:#e5e7eb;
+  text-align:center;
+}
+.badge {
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:12px;
+  background:#e5e7eb;
+}
+.gauge {
+  width:120px;
+  height:65px;
+}
 </style>
 </head>
 
@@ -46,22 +85,27 @@
 
 <script type="text/babel">
 
+/* ==================== Utilities ==================== */
+function isNumeric(val) {
+  return val !== null && val !== "" && !isNaN(val);
+}
+
 /* ==================== Data Hook ==================== */
-function usePlanData() {
+function useKRIData() {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
     const url =
-      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
+      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=KRI`;
 
     fetch(url)
       .then(res => res.text())
       .then(csv => {
         const parsed = Papa.parse(csv, {
           header: true,
-          skipEmptyLines: true,
+          skipEmptyLines: true
         });
         setRows(parsed.data);
         setLoading(false);
@@ -71,53 +115,70 @@ function usePlanData() {
   return { rows, loading };
 }
 
+/* ==================== Risk Gauge ==================== */
+function RiskGauge({ value, ra, rt }) {
+  let color = "#16a34a"; // green
+  if (value < rt) color = "#dc2626";       // red
+  else if (value < ra) color = "#facc15"; // yellow
+
+  const max = Math.max(ra, value);
+  const percent = Math.min(value / max, 1);
+  const arc = percent * 180;
+
+  return (
+    <svg viewBox="0 0 200 100" className="gauge">
+      <path
+        d="M10 90 A80 80 0 0 1 190 90"
+        fill="none"
+        stroke="#e5e7eb"
+        strokeWidth="16"
+      />
+      <path
+        d="M10 90 A80 80 0 0 1 190 90"
+        fill="none"
+        stroke={color}
+        strokeWidth="16"
+        strokeDasharray={`${arc * 2.8} 1000`}
+      />
+      <text x="100" y="80" textAnchor="middle" fontSize="14">
+        {value}
+      </text>
+    </svg>
+  );
+}
+
 /* ==================== App ==================== */
 function App() {
-  const { rows, loading } = usePlanData();
-
+  const { rows, loading } = useKRIData();
   const [rfFilter, setRfFilter] = React.useState("ALL");
-  const [selectedPlan, setSelectedPlan] = React.useState(null);
-  const [quarter, setQuarter] = React.useState("Q1");
 
-  /* ---------- RF list ---------- */
   const rfList = React.useMemo(() => {
-    const set = new Set(rows.map(r => r.RF_GroupName));
+    const set = new Set(rows.map(r => r.RF));
     return ["ALL", ...Array.from(set)];
   }, [rows]);
 
-  /* ---------- Group by Plan ---------- */
-  const planGroups = React.useMemo(() => {
-    const map = {};
-    rows.forEach(r => {
-      if (rfFilter !== "ALL" && r.RF_GroupName !== rfFilter) return;
-      if (!map[r.PlanName]) map[r.PlanName] = [];
-      map[r.PlanName].push(r);
-    });
-    return map;
+  const filtered = React.useMemo(() => {
+    return rows.filter(r =>
+      rfFilter === "ALL" || r.RF === rfFilter
+    );
   }, [rows, rfFilter]);
-
-  /* ---------- Quarter field names ---------- */
-  const detailKey = `${quarter}_Detail`;
-  const problemKey = `${quarter}_Problem`;
-  const solutionKey = `${quarter}_Solution`;
 
   return (
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button className="active">Plan Report v1.0.2</button>
+        <button className="active">KRI Report v2.00</button>
       </div>
 
       <div className="content">
-        <h2>Plan Report</h2>
+        <h2>KRI Report</h2>
 
         {loading && <p>กำลังโหลดข้อมูล…</p>}
 
-        {!loading && !selectedPlan && (
+        {!loading && (
           <>
-            {/* ---------- RF Filter ---------- */}
             <div className="toolbar">
-              <label>RF Group: </label>
+              <label>RF: </label>
               <select
                 value={rfFilter}
                 onChange={e => setRfFilter(e.target.value)}
@@ -128,80 +189,45 @@ function App() {
               </select>
             </div>
 
-            {/* ---------- Plan Summary Table ---------- */}
             <table>
               <thead>
                 <tr>
-                  <th>แผนงาน</th>
-                  <th>RF</th>
-                  <th>ผลการดำเนินงาน (%)</th>
-                  <th>เป้าหมาย</th>
-                  <th>สถานะ</th>
+                  <th style={{width:"8%"}}>RF</th>
+                  <th>KRI_Name</th>
+                  <th style={{width:"12%"}}>KRI_Status</th>
+                  <th style={{width:"10%"}}>RA</th>
+                  <th style={{width:"10%"}}>RT</th>
+                  <th style={{width:"15%"}}>Risk Meter</th>
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(planGroups).map(([planName, items]) => {
-                  const p = items[0];
+                {filtered.map((r, i) => {
+                  const numeric =
+                    isNumeric(r.KRI_Status) &&
+                    isNumeric(r.RA) &&
+                    isNumeric(r.RT);
+
                   return (
-                    <tr key={planName}
-                        style={{ cursor:"pointer" }}
-                        onClick={() => setSelectedPlan({ name: planName, items })}>
-                      <td>{planName}</td>
-                      <td style={{ textAlign:"center" }}>{p.RF_GroupName}</td>
-                      <td style={{ textAlign:"center" }}>{p.ResultPercent}</td>
-                      <td style={{ textAlign:"center" }}>{p.TargetLevel5}</td>
-                      <td>{p.Status_Combined}</td>
+                    <tr key={i}>
+                      <td style={{textAlign:"center"}}>{r.RF}</td>
+                      <td>{r.KRI_Name}</td>
+                      <td style={{textAlign:"center"}}>{r.KRI_Status}</td>
+                      <td style={{textAlign:"center"}}>{r.RA}</td>
+                      <td style={{textAlign:"center"}}>{r.RT}</td>
+                      <td style={{textAlign:"center"}}>
+                        {numeric ? (
+                          <RiskGauge
+                            value={Number(r.KRI_Status)}
+                            ra={Number(r.RA)}
+                            rt={Number(r.RT)}
+                          />
+                        ) : (
+                          <span className="badge">KRI เชิงคุณภาพ</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
-              </tbody>
-            </table>
-          </>
-        )}
-
-        {/* ==================== Drill-down ==================== */}
-        {selectedPlan && (
-          <>
-            <button onClick={() => setSelectedPlan(null)}>← กลับ</button>
-            <h3>{selectedPlan.name}</h3>
-
-            {/* Quarter Filter */}
-            <div className="toolbar">
-              <label>ไตรมาส: </label>
-              {["Q1","Q2","Q3","Q4"].map(q => (
-                <button
-                  key={q}
-                  onClick={() => setQuarter(q)}
-                  style={{
-                    fontWeight: quarter === q ? "bold" : "normal"
-                  }}
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            {/* Activity Table */}
-            <table>
-              <thead>
-                <tr>
-                  <th>ลำดับ</th>
-                  <th>กิจกรรม</th>
-                  <th>รายละเอียด</th>
-                  <th>ปัญหา / อุปสรรค</th>
-                  <th>แนวทางการแก้ไข</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedPlan.items.map((a, i) => (
-                  <tr key={i}>
-                    <td style={{ textAlign:"center" }}>{a.ActivityOrder}</td>
-                    <td>{a.ActivityName}</td>
-                    <td>{a[detailKey]}</td>
-                    <td>{a[problemKey]}</td>
-                    <td>{a[solutionKey]}</td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           </>
@@ -211,7 +237,9 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM
+  .createRoot(document.getElementById("root"))
+  .render(<App />);
 
 </script>
 </body>
