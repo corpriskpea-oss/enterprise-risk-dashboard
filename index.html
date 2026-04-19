@@ -1,36 +1,40 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8" />
-  <title>Enterprise Risk Dashboard – BASE</title>
+/************** PATCH A + B : KRI ****************/
 
-  <!-- React -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+/* Utility: แปลงค่าเป็นตัวเลข (กัน % / space) */
+function toNumber(val) {
+  if (val === undefined || val === null) return "";
+  return String(val).replace("%", "").trim();
+}
 
-  <!-- Babel -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+/* Hook: โหลดข้อมูล KRI จาก Google Sheet */
+function useKRIData() {
+  const [rows, setRows] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
 
-  <!-- PapaParse -->
-  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  React.useEffect(() => {
+    const url =
+      "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&sheet=KRI";
 
-  <style>
-    body { margin:0; font-family: Arial, sans-serif; }
-    .layout { display:flex; min-height:100vh; }
-    .sidebar {
-      width:220px; background:#0f172a; color:white; padding:16px;
-    }
-    .content { flex:1; padding:24px; }
-    button { margin-right:8px; }
-  </style>
-</head>
+    fetch(url)
+      .then(res => res.text())
+      .then(csv => {
+        const parsed = Papa.parse(csv, {
+          header: true,
+          skipEmptyLines: true,
+        });
+        setRows(parsed.data);
+        setLoading(false);
+      });
+  }, []);
 
-<body>
-<div id="root"></div>
+  return { rows, loading };
+}
 
-<script type="text/babel">
-function App(){
+/* ========= App ========= */
+function App() {
   const [menu, setMenu] = React.useState("kri");
+  const { rows: kriRows, loading } = useKRIData();
+
   return (
     <div className="layout">
       <div className="sidebar">
@@ -38,15 +42,51 @@ function App(){
         <button onClick={() => setMenu("plan")}>Plan</button>
         <button onClick={() => setMenu("kri")}>KRI</button>
       </div>
+
       <div className="content">
-        <h2>{menu.toUpperCase()}</h2>
-        <p>✅ BASE ทำงานแล้ว (ไม่หน้าขาว)</p>
+        {menu === "plan" && (
+          <>
+            <h2>Plan Report</h2>
+            <p>ยังไม่เชื่อมใน PATCH นี้</p>
+          </>
+        )}
+
+        {menu === "kri" && (
+          <>
+            <h2>KRI Report</h2>
+
+            {loading && <p>กำลังโหลดข้อมูล KRI…</p>}
+
+            {!loading && (
+              <table>
+                <thead>
+                  <tr>
+                    <th>RF</th>
+                    <th>KRI Name</th>
+                    <th>KRI Status</th>
+                    <th>RT</th>
+                    <th>RA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {kriRows.map((k, i) => (
+                    <tr key={i}>
+                      <td>{k.RF}</td>
+                      <td>{k.KRI_Name ?? k["KRI Name"]}</td>
+                      <td>{toNumber(k.KRI_Status)}</td>
+                      <td>{toNumber(k.RT)}</td>
+                      <td>{toNumber(k.RA)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
 }
 
+/* Render */
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-</script>
-</body>
-</html>
