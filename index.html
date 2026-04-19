@@ -2,17 +2,17 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.04 (KRI)</title>
+<title>Enterprise Risk Dashboard – v2.03 (KRI)</title>
 
 <!-- React -->
-https://unpkg.com/react@18/umd/react.development.jsscript>
-https://unpkg.com/react-dom@18/umd/react-dom.development.jsscript>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
 <!-- Babel -->
-https://unpkg.com/@babel/standalone/babel.min.jsscript>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <!-- PapaParse -->
-https://unpkg.com/papaparse@5.4.1/papaparse.min.jsscript>
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
 body {
@@ -55,17 +55,16 @@ select {
   padding:6px 10px;
 }
 
-/* ✅ Summary */
 .summary {
   display:flex;
   gap:12px;
-  flex-wrap:wrap;
   margin-bottom:20px;
+  flex-wrap:wrap;
 }
 .card {
   border-radius:8px;
   padding:12px 16px;
-  min-width:190px;
+  min-width:180px;
   border:1px solid #e5e7eb;
 }
 .card h4 {
@@ -74,13 +73,12 @@ select {
 }
 .counts {
   display:flex;
-  gap:12px;
+  gap:10px;
   font-size:13px;
 }
 .red { color:#dc2626; }
 .yellow { color:#ca8a04; }
 .green { color:#16a34a; }
-.gray { color:#6b7280; }
 
 table {
   width:100%;
@@ -89,9 +87,11 @@ table {
 th, td {
   border:1px solid #ddd;
   padding:8px;
+  vertical-align:top;
 }
 th {
   background:#e5e7eb;
+  text-align:center;
 }
 .badge {
   padding:4px 8px;
@@ -128,7 +128,6 @@ function useKRIData() {
   React.useEffect(() => {
     const url =
       "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339";
-
     fetch(url)
       .then(r => r.text())
       .then(csv => {
@@ -181,34 +180,22 @@ function App() {
     rfFilter === "ALL" || r.RF === rfFilter
   );
 
-  /* ✅ Summary (แก้ RF5) */
+  /* ----- Summary ----- */
   const summary = React.useMemo(() => {
     const map = {};
-
-    // สร้าง RF ทุกตัวก่อน
     filtered.forEach(r => {
-      if (!map[r.RF]) {
-        map[r.RF] = { red:0, yellow:0, green:0, unavailable:0 };
-      }
-    });
-
-    filtered.forEach(r => {
-      const s = map[r.RF];
-
-      if (!isNumeric(r.KRI_Status) || !isNumeric(r.RA) || !isNumeric(r.RT)) {
-        s.unavailable++;
-        return;
-      }
+      if (!isNumeric(r.KRI_Status) || !isNumeric(r.RA) || !isNumeric(r.RT)) return;
+      const rf = r.RF;
+      if (!map[rf]) map[rf] = { red:0, yellow:0, green:0 };
 
       const v = toNumber(r.KRI_Status);
       const ra = toNumber(r.RA);
       const rt = toNumber(r.RT);
 
-      if (v < rt) s.red++;
-      else if (v < ra) s.yellow++;
-      else s.green++;
+      if (v < rt) map[rf].red++;
+      else if (v < ra) map[rf].yellow++;
+      else map[rf].green++;
     });
-
     return map;
   }, [filtered]);
 
@@ -218,7 +205,7 @@ function App() {
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button className="active">KRI Report v2.04</button>
+        <button className="active">KRI Report v2.03</button>
       </div>
 
       <div className="content">
@@ -237,9 +224,6 @@ function App() {
                     <span className="red">🔴 {s.red}</span>
                     <span className="yellow">🟡 {s.yellow}</span>
                     <span className="green">🟢 {s.green}</span>
-                    {s.unavailable > 0 && (
-                      <span className="gray">⚪ {s.unavailable}</span>
-                    )}
                   </div>
                 </div>
               ))}
@@ -289,6 +273,8 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
 </script>
 </body>
 </html>
+``
