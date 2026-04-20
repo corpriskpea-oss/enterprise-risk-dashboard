@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.03 (KRI)</title>
+<title>Enterprise Risk Dashboard – v2.04 (KRI)</title>
 
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -15,94 +15,45 @@
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#f3f4f6;
-}
-.layout {
-  display:flex;
-  min-height:100vh;
-}
+body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+.layout { display:flex; min-height:100vh; }
+
 .sidebar {
-  width:240px;
-  background:#0f172a;
-  color:white;
-  padding:16px;
+  width:240px; background:#0f172a; color:white; padding:16px;
 }
 .sidebar button {
-  width:100%;
-  padding:10px;
-  margin-bottom:8px;
-  background:none;
-  border:none;
-  color:white;
-  text-align:left;
-  cursor:pointer;
+  width:100%; padding:10px; margin-bottom:8px;
+  background:none; border:none; color:white; text-align:left; cursor:pointer;
 }
-.sidebar button.active {
-  background:#334155;
-}
-.content {
-  flex:1;
-  padding:24px;
-  background:white;
-}
-.toolbar {
-  margin:16px 0;
-}
-select {
-  padding:6px 10px;
-}
+.sidebar button.active { background:#334155; }
+
+.content { flex:1; padding:24px; background:white; }
+
+.toolbar { margin-bottom:14px; display:flex; gap:12px; align-items:center; }
+select { padding:6px 10px; }
 
 .summary {
-  display:flex;
-  gap:12px;
-  margin-bottom:20px;
-  flex-wrap:wrap;
+  display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;
 }
 .card {
-  border-radius:8px;
-  padding:12px 16px;
-  min-width:180px;
-  border:1px solid #e5e7eb;
+  border-radius:8px; padding:12px 16px;
+  min-width:180px; border:1px solid #e5e7eb;
 }
-.card h4 {
-  margin:0 0 8px 0;
-  font-size:14px;
-}
-.counts {
-  display:flex;
-  gap:10px;
-  font-size:13px;
-}
+.card h4 { margin:0 0 8px 0; font-size:14px; }
+.counts { display:flex; gap:10px; font-size:13px; }
 .red { color:#dc2626; }
 .yellow { color:#ca8a04; }
 .green { color:#16a34a; }
 
-table {
-  width:100%;
-  border-collapse:collapse;
-}
-th, td {
-  border:1px solid #ddd;
-  padding:8px;
-  vertical-align:top;
-}
-th {
-  background:#e5e7eb;
-  text-align:center;
-}
+table { width:100%; border-collapse:collapse; }
+th, td { border:1px solid #ddd; padding:8px; vertical-align:top; }
+th { background:#e5e7eb; text-align:center; }
+
 .badge {
-  padding:4px 8px;
-  border-radius:6px;
-  font-size:12px;
-  background:#e5e7eb;
+  padding:4px 8px; border-radius:6px;
+  font-size:12px; background:#e5e7eb;
 }
-.gauge {
-  width:140px;
-  height:80px;
-}
+.gauge { width:140px; height:80px; }
 </style>
 </head>
 
@@ -111,7 +62,7 @@ th {
 
 <script type="text/babel">
 
-/* ---------- Utilities ---------- */
+/* ================= Utilities ================= */
 function toNumber(val) {
   if (val === null || val === undefined) return NaN;
   return Number(String(val).replace(/,/g, ""));
@@ -120,7 +71,7 @@ function isNumeric(val) {
   return !isNaN(toNumber(val));
 }
 
-/* ---------- Data Hook ---------- */
+/* ================= Data Hook ================= */
 function useKRIData() {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -128,8 +79,9 @@ function useKRIData() {
   React.useEffect(() => {
     const url =
       "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339";
+
     fetch(url)
-      .then(r => r.text())
+      .then(res => res.text())
       .then(csv => {
         const parsed = Papa.parse(csv, { header:true, skipEmptyLines:true });
         setRows(parsed.data);
@@ -140,7 +92,7 @@ function useKRIData() {
   return { rows, loading };
 }
 
-/* ---------- Risk Meter ---------- */
+/* ================= Risk Meter ================= */
 function RiskMeter({ value, ra, rt }) {
   if (ra === 0 && rt === 0) {
     return <span className="badge">ยังไม่กำหนดเกณฑ์</span>;
@@ -171,41 +123,45 @@ function RiskMeter({ value, ra, rt }) {
   );
 }
 
-/* ---------- App ---------- */
+/* ================= App ================= */
 function App() {
   const { rows, loading } = useKRIData();
   const [rfFilter, setRfFilter] = React.useState("ALL");
+  const [monthFilter, setMonthFilter] = React.useState("ALL");
+
+  const rfList   = ["ALL", ...new Set(rows.map(r => r.RF_GroupName))];
+  const monthList = ["ALL", ...new Set(rows.map(r => r.Month))];
 
   const filtered = rows.filter(r =>
-    rfFilter === "ALL" || r.RF === rfFilter
+    (rfFilter === "ALL" || r.RF_GroupName === rfFilter) &&
+    (monthFilter === "ALL" || r.Month === monthFilter)
   );
 
-  /* ----- Summary ----- */
+  /* ===== Summary ===== */
   const summary = React.useMemo(() => {
     const map = {};
     filtered.forEach(r => {
+      if (!map[r.RF_GroupName]) {
+        map[r.RF_GroupName] = { red:0, yellow:0, green:0 };
+      }
       if (!isNumeric(r.KRI_Status) || !isNumeric(r.RA) || !isNumeric(r.RT)) return;
-      const rf = r.RF;
-      if (!map[rf]) map[rf] = { red:0, yellow:0, green:0 };
 
       const v = toNumber(r.KRI_Status);
       const ra = toNumber(r.RA);
       const rt = toNumber(r.RT);
 
-      if (v < rt) map[rf].red++;
-      else if (v < ra) map[rf].yellow++;
-      else map[rf].green++;
+      if (v < rt) map[r.RF_GroupName].red++;
+      else if (v < ra) map[r.RF_GroupName].yellow++;
+      else map[r.RF_GroupName].green++;
     });
     return map;
   }, [filtered]);
-
-  const rfList = ["ALL", ...new Set(rows.map(r => r.RF))];
 
   return (
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button className="active">KRI Report v2.03</button>
+        <button className="active">KRI</button>
       </div>
 
       <div className="content">
@@ -215,7 +171,20 @@ function App() {
 
         {!loading && (
           <>
-            {/* ✅ Summary Cards */}
+            {/* ===== Filters ===== */}
+            <div className="toolbar">
+              <label>RF: </label>
+              <select value={rfFilter} onChange={e=>setRfFilter(e.target.value)}>
+                {rfList.map(rf => <option key={rf}>{rf}</option>)}
+              </select>
+
+              <label>Month: </label>
+              <select value={monthFilter} onChange={e=>setMonthFilter(e.target.value)}>
+                {monthList.map(m => <option key={m}>{m}</option>)}
+              </select>
+            </div>
+
+            {/* ===== Summary Cards ===== */}
             <div className="summary">
               {Object.entries(summary).map(([rf, s]) => (
                 <div key={rf} className="card">
@@ -229,17 +198,12 @@ function App() {
               ))}
             </div>
 
-            <div className="toolbar">
-              <label>RF: </label>
-              <select value={rfFilter} onChange={e => setRfFilter(e.target.value)}>
-                {rfList.map(rf => <option key={rf}>{rf}</option>)}
-              </select>
-            </div>
-
+            {/* ===== Table ===== */}
             <table>
               <thead>
                 <tr>
                   <th>RF</th>
+                  <th>Month</th>
                   <th>KRI_Name</th>
                   <th>KRI_Status</th>
                   <th>RA</th>
@@ -248,16 +212,21 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, i) => (
+                {filtered.map((r,i)=>(
                   <tr key={i}>
-                    <td>{r.RF}</td>
+                    <td>{r.RF_GroupName}</td>
+                    <td>{r.Month}</td>
                     <td>{r.KRI_Name}</td>
                     <td>{r.KRI_Status}</td>
                     <td>{r.RA}</td>
                     <td>{r.RT}</td>
                     <td>
                       {isNumeric(r.KRI_Status) && isNumeric(r.RA) && isNumeric(r.RT)
-                        ? <RiskMeter value={toNumber(r.KRI_Status)} ra={toNumber(r.RA)} rt={toNumber(r.RT)} />
+                        ? <RiskMeter
+                            value={toNumber(r.KRI_Status)}
+                            ra={toNumber(r.RA)}
+                            rt={toNumber(r.RT)}
+                          />
                         : <span className="badge">KRI เชิงคุณภาพ</span>
                       }
                     </td>
@@ -272,9 +241,8 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
 </script>
 </body>
 </html>
-``
