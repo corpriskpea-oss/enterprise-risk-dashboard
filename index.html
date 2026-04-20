@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <title>Enterprise Risk Dashboard – v4.01 (Risk Response)</title>
 
-<!-- PapaParse -->
-https://unpkg.com/papaparse@5.4.1/papaparse.min.js
+<!-- ✅ FIX: PapaParse -->
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
 body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
@@ -24,9 +24,7 @@ body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
 
 .controls select { padding:6px; margin-right:10px; }
 
-.cards, .grids {
-  display:flex; gap:12px; margin:16px 0;
-}
+.cards, .grids { display:flex; gap:12px; margin:16px 0; }
 
 .card, .grid {
   flex:1; padding:14px; border-radius:8px;
@@ -38,19 +36,11 @@ body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
 .blue { background:#2563eb; }
 .gray { background:#6b7280; }
 
-.grid {
-  text-align:center;
-}
-.grid b {
-  display:block;
-  font-size:28px;
-  margin-top:8px;
-}
+.grid { text-align:center; }
+.grid b { display:block; font-size:28px; margin-top:8px; }
 
 table { width:100%; border-collapse:collapse; }
-th, td {
-  border:1px solid #ddd; padding:8px; font-size:14px;
-}
+th, td { border:1px solid #ddd; padding:8px; font-size:14px; }
 th { background:#e5e7eb; }
 
 .good { background:#dcfce7; }
@@ -101,7 +91,7 @@ th { background:#e5e7eb; }
   </div>
 </div>
 
-<!-- ✅ GRID DASHBOARD -->
+<!-- ✅ Grid Dashboard -->
 <div class="grids">
   <div class="grid green">
     Achieved
@@ -131,8 +121,9 @@ th { background:#e5e7eb; }
 </div>
 
 <script>
+/* ✅ Sheet URL (ID + gid ถูกต้อง) */
 const sheetUrl =
-"https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=1852497314";
+  "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=1852497314";
 
 const rfSel = document.getElementById("rf");
 const qSel = document.getElementById("q");
@@ -149,33 +140,39 @@ const gridPerf     = document.getElementById("gridPerf");
 
 let rows = [];
 
+/* ✅ Load Data */
 Papa.parse(sheetUrl,{
-  download:true, header:true, skipEmptyLines:true,
+  download:true,
+  header:true,
+  skipEmptyLines:true,
   complete(res){
     rows = res.data;
+
     rfSel.innerHTML =
       `<option value="ALL">ALL</option>` +
       [...new Set(rows.map(r=>r.RF_GroupName))]
-        .map(r=>`<option>${r}</option>`).join("");
+        .map(r=>`<option value="${r}">${r}</option>`).join("");
+
     render();
   }
 });
 
 function render(){
-  tbody.innerHTML="";
+  tbody.innerHTML = "";
+
   const rf = rfSel.value;
   const q  = qSel.value;
 
-  const f = rows.filter(r =>
-    (rf==="ALL" || r.RF_GroupName===rf) &&
-    r.Quarter===q
+  const filtered = rows.filter(r =>
+    (rf === "ALL" || r.RF_GroupName === rf) &&
+    r.Quarter === q
   );
 
-  let success=0, fail=0;
-  let sumResult=0, sumTarget=0;
+  let success = 0, fail = 0;
+  let sumResult = 0, sumTarget = 0;
 
-  f.forEach(r=>{
-    const w = +r.PlanWeightPercent;
+  filtered.forEach(r=>{
+    const w   = +r.PlanWeightPercent;
     const res = +r.ResultPercent;
     const tar = +r.TargetLevel5;
 
@@ -192,7 +189,7 @@ function render(){
         <td>${r.PlanName}</td>
         <td>${w}</td>
         <td>${tar}</td>
-        <td class="${res>=tar?"good":"bad"}">${res}</td>
+        <td class="${res>=tar ? "good":"bad"}">${res}</td>
       </tr>`;
   });
 
@@ -211,4 +208,3 @@ qSel.onchange  = render;
 </script>
 </body>
 </html>
-``
