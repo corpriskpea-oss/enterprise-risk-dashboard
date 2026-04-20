@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v1.0.2 (Plan)</title>
+<title>Enterprise Risk Dashboard – v2.03 (KRI)</title>
 
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -15,29 +15,94 @@
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-  body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
-  .layout { display:flex; min-height:100vh; }
-  .sidebar {
-    width:240px; background:#0f172a; color:white; padding:16px;
-  }
-  .sidebar button {
-    width:100%; padding:10px; margin-bottom:8px;
-    background:none; border:none; color:white;
-    text-align:left; cursor:pointer;
-  }
-  .sidebar button.active { background:#334155; }
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f3f4f6;
+}
+.layout {
+  display:flex;
+  min-height:100vh;
+}
+.sidebar {
+  width:240px;
+  background:#0f172a;
+  color:white;
+  padding:16px;
+}
+.sidebar button {
+  width:100%;
+  padding:10px;
+  margin-bottom:8px;
+  background:none;
+  border:none;
+  color:white;
+  text-align:left;
+  cursor:pointer;
+}
+.sidebar button.active {
+  background:#334155;
+}
+.content {
+  flex:1;
+  padding:24px;
+  background:white;
+}
+.toolbar {
+  margin:16px 0;
+}
+select {
+  padding:6px 10px;
+}
 
-  .content { flex:1; padding:24px; background:white; }
+.summary {
+  display:flex;
+  gap:12px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+.card {
+  border-radius:8px;
+  padding:12px 16px;
+  min-width:180px;
+  border:1px solid #e5e7eb;
+}
+.card h4 {
+  margin:0 0 8px 0;
+  font-size:14px;
+}
+.counts {
+  display:flex;
+  gap:10px;
+  font-size:13px;
+}
+.red { color:#dc2626; }
+.yellow { color:#ca8a04; }
+.green { color:#16a34a; }
 
-  table { width:100%; border-collapse:collapse; margin-top:12px; }
-  th, td { border:1px solid #ddd; padding:8px; vertical-align:top; }
-  th { background:#e5e7eb; text-align:center; }
-
-  select, button {
-    padding:6px 10px; margin-right:8px;
-  }
-
-  .toolbar { margin-bottom:12px; }
+table {
+  width:100%;
+  border-collapse:collapse;
+}
+th, td {
+  border:1px solid #ddd;
+  padding:8px;
+  vertical-align:top;
+}
+th {
+  background:#e5e7eb;
+  text-align:center;
+}
+.badge {
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:12px;
+  background:#e5e7eb;
+}
+.gauge {
+  width:140px;
+  height:80px;
+}
 </style>
 </head>
 
@@ -46,23 +111,27 @@
 
 <script type="text/babel">
 
-/* ==================== Data Hook ==================== */
-function usePlanData() {
+/* ---------- Utilities ---------- */
+function toNumber(val) {
+  if (val === null || val === undefined) return NaN;
+  return Number(String(val).replace(/,/g, ""));
+}
+function isNumeric(val) {
+  return !isNaN(toNumber(val));
+}
+
+/* ---------- Data Hook ---------- */
+function useKRIData() {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
     const url =
-      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
-
+      "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339";
     fetch(url)
-      .then(res => res.text())
+      .then(r => r.text())
       .then(csv => {
-        const parsed = Papa.parse(csv, {
-          header: true,
-          skipEmptyLines: true,
-        });
+        const parsed = Papa.parse(csv, { header:true, skipEmptyLines:true });
         setRows(parsed.data);
         setLoading(false);
       });
@@ -71,135 +140,127 @@ function usePlanData() {
   return { rows, loading };
 }
 
-/* ==================== App ==================== */
+/* ---------- Risk Meter ---------- */
+function RiskMeter({ value, ra, rt }) {
+  if (ra === 0 && rt === 0) {
+    return <span className="badge">ยังไม่กำหนดเกณฑ์</span>;
+  }
+
+  const max = Math.max(value, ra) * 1.1;
+  const toAngle = v => Math.min((v / max) * 180, 180);
+
+  const polar = a => {
+    const rad = (a - 180) * Math.PI / 180;
+    return { x:100 + 80*Math.cos(rad), y:90 + 80*Math.sin(rad) };
+  };
+
+  const rtP = polar(toAngle(rt));
+  const raP = polar(toAngle(ra));
+  const valP = polar(toAngle(value));
+
+  return (
+    <svg viewBox="0 0 200 120" className="gauge">
+      <path d={`M20 90 A80 80 0 0 1 ${rtP.x} ${rtP.y}`} stroke="#dc2626" strokeWidth="16" fill="none"/>
+      <path d={`M${rtP.x} ${rtP.y} A80 80 0 0 1 ${raP.x} ${raP.y}`} stroke="#facc15" strokeWidth="16" fill="none"/>
+      <path d={`M${raP.x} ${raP.y} A80 80 0 0 1 180 90`} stroke="#16a34a" strokeWidth="16" fill="none"/>
+
+      <line x1="100" y1="90" x2={valP.x} y2={valP.y} stroke="#111827" strokeWidth="3"/>
+      <circle cx="100" cy="90" r="4" fill="#111827"/>
+      <text x="100" y="115" textAnchor="middle" fontSize="12">{value}</text>
+    </svg>
+  );
+}
+
+/* ---------- App ---------- */
 function App() {
-  const { rows, loading } = usePlanData();
-
+  const { rows, loading } = useKRIData();
   const [rfFilter, setRfFilter] = React.useState("ALL");
-  const [selectedPlan, setSelectedPlan] = React.useState(null);
-  const [quarter, setQuarter] = React.useState("Q1");
 
-  /* ---------- RF list ---------- */
-  const rfList = React.useMemo(() => {
-    const set = new Set(rows.map(r => r.RF_GroupName));
-    return ["ALL", ...Array.from(set)];
-  }, [rows]);
+  const filtered = rows.filter(r =>
+    rfFilter === "ALL" || r.RF === rfFilter
+  );
 
-  /* ---------- Group by Plan ---------- */
-  const planGroups = React.useMemo(() => {
+  /* ----- Summary ----- */
+  const summary = React.useMemo(() => {
     const map = {};
-    rows.forEach(r => {
-      if (rfFilter !== "ALL" && r.RF_GroupName !== rfFilter) return;
-      if (!map[r.PlanName]) map[r.PlanName] = [];
-      map[r.PlanName].push(r);
+    filtered.forEach(r => {
+      if (!isNumeric(r.KRI_Status) || !isNumeric(r.RA) || !isNumeric(r.RT)) return;
+      const rf = r.RF;
+      if (!map[rf]) map[rf] = { red:0, yellow:0, green:0 };
+
+      const v = toNumber(r.KRI_Status);
+      const ra = toNumber(r.RA);
+      const rt = toNumber(r.RT);
+
+      if (v < rt) map[rf].red++;
+      else if (v < ra) map[rf].yellow++;
+      else map[rf].green++;
     });
     return map;
-  }, [rows, rfFilter]);
+  }, [filtered]);
 
-  /* ---------- Quarter field names ---------- */
-  const detailKey = `${quarter}_Detail`;
-  const problemKey = `${quarter}_Problem`;
-  const solutionKey = `${quarter}_Solution`;
+  const rfList = ["ALL", ...new Set(rows.map(r => r.RF))];
 
   return (
     <div className="layout">
       <div className="sidebar">
         <h3>Enterprise Risk</h3>
-        <button className="active">Plan Report v1.0.2</button>
+        <button className="active">KRI Report v2.03</button>
       </div>
 
       <div className="content">
-        <h2>Plan Report</h2>
+        <h2>KRI Report</h2>
 
         {loading && <p>กำลังโหลดข้อมูล…</p>}
 
-        {!loading && !selectedPlan && (
+        {!loading && (
           <>
-            {/* ---------- RF Filter ---------- */}
-            <div className="toolbar">
-              <label>RF Group: </label>
-              <select
-                value={rfFilter}
-                onChange={e => setRfFilter(e.target.value)}
-              >
-                {rfList.map(rf => (
-                  <option key={rf} value={rf}>{rf}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* ---------- Plan Summary Table ---------- */}
-            <table>
-              <thead>
-                <tr>
-                  <th>แผนงาน</th>
-                  <th>RF</th>
-                  <th>ผลการดำเนินงาน (%)</th>
-                  <th>เป้าหมาย</th>
-                  <th>สถานะ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(planGroups).map(([planName, items]) => {
-                  const p = items[0];
-                  return (
-                    <tr key={planName}
-                        style={{ cursor:"pointer" }}
-                        onClick={() => setSelectedPlan({ name: planName, items })}>
-                      <td>{planName}</td>
-                      <td style={{ textAlign:"center" }}>{p.RF_GroupName}</td>
-                      <td style={{ textAlign:"center" }}>{p.ResultPercent}</td>
-                      <td style={{ textAlign:"center" }}>{p.TargetLevel5}</td>
-                      <td>{p.Status_Combined}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </>
-        )}
-
-        {/* ==================== Drill-down ==================== */}
-        {selectedPlan && (
-          <>
-            <button onClick={() => setSelectedPlan(null)}>← กลับ</button>
-            <h3>{selectedPlan.name}</h3>
-
-            {/* Quarter Filter */}
-            <div className="toolbar">
-              <label>ไตรมาส: </label>
-              {["Q1","Q2","Q3","Q4"].map(q => (
-                <button
-                  key={q}
-                  onClick={() => setQuarter(q)}
-                  style={{
-                    fontWeight: quarter === q ? "bold" : "normal"
-                  }}
-                >
-                  {q}
-                </button>
+            {/* ✅ Summary Cards */}
+            <div className="summary">
+              {Object.entries(summary).map(([rf, s]) => (
+                <div key={rf} className="card">
+                  <h4>{rf}</h4>
+                  <div className="counts">
+                    <span className="red">🔴 {s.red}</span>
+                    <span className="yellow">🟡 {s.yellow}</span>
+                    <span className="green">🟢 {s.green}</span>
+                  </div>
+                </div>
               ))}
             </div>
 
-            {/* Activity Table */}
+            <div className="toolbar">
+              <label>RF: </label>
+              <select value={rfFilter} onChange={e => setRfFilter(e.target.value)}>
+                {rfList.map(rf => <option key={rf}>{rf}</option>)}
+              </select>
+            </div>
+
             <table>
               <thead>
                 <tr>
-                  <th>ลำดับ</th>
-                  <th>กิจกรรม</th>
-                  <th>รายละเอียด</th>
-                  <th>ปัญหา / อุปสรรค</th>
-                  <th>แนวทางการแก้ไข</th>
+                  <th>RF</th>
+                  <th>KRI_Name</th>
+                  <th>KRI_Status</th>
+                  <th>RA</th>
+                  <th>RT</th>
+                  <th>Risk Meter</th>
                 </tr>
               </thead>
               <tbody>
-                {selectedPlan.items.map((a, i) => (
+                {filtered.map((r, i) => (
                   <tr key={i}>
-                    <td style={{ textAlign:"center" }}>{a.ActivityOrder}</td>
-                    <td>{a.ActivityName}</td>
-                    <td>{a[detailKey]}</td>
-                    <td>{a[problemKey]}</td>
-                    <td>{a[solutionKey]}</td>
+                    <td>{r.RF}</td>
+                    <td>{r.KRI_Name}</td>
+                    <td>{r.KRI_Status}</td>
+                    <td>{r.RA}</td>
+                    <td>{r.RT}</td>
+                    <td>
+                      {isNumeric(r.KRI_Status) && isNumeric(r.RA) && isNumeric(r.RT)
+                        ? <RiskMeter value={toNumber(r.KRI_Status)} ra={toNumber(r.RA)} rt={toNumber(r.RT)} />
+                        : <span className="badge">KRI เชิงคุณภาพ</span>
+                      }
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -216,3 +277,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
+``
