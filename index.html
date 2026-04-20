@@ -2,9 +2,9 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Enterprise Risk Dashboard – v4.01 (Risk Response)</title>
+<title>Enterprise Risk Dashboard – v4.02 (Risk Response)</title>
 
-<!-- ✅ PapaParse -->
+<!-- ✅ PapaParse (FIXED) -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -24,9 +24,7 @@ body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
 
 .controls select { padding:6px; margin-right:10px; }
 
-.cards {
-  display:flex; gap:12px; margin:16px 0;
-}
+.cards { display:flex; gap:12px; margin:16px 0; }
 .card {
   flex:1; padding:14px; border-radius:8px;
   font-size:14px; color:white;
@@ -37,32 +35,47 @@ body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
 .gray { background:#6b7280; }
 
 /* ===== Bullet Chart ===== */
-.bullet-box {
-  margin:20px 0;
-}
-.bullet-title {
-  font-weight:bold;
-  margin-bottom:6px;
-}
+.bullet-box { margin:20px 0; }
+.bullet-title { font-weight:bold; margin-bottom:6px; }
+
 .bullet-bg {
   position:relative;
-  height:22px;
+  height:26px;
   background:#e5e7eb;
   border-radius:6px;
 }
+
 .bullet-result {
   position:absolute;
   height:100%;
   background:#2563eb;
   border-radius:6px 0 0 6px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  padding-right:6px;
+  color:white;
+  font-size:12px;
+  font-weight:bold;
 }
+
 .bullet-target {
   position:absolute;
-  top:-4px;
+  top:-6px;
   width:3px;
-  height:30px;
+  height:38px;
   background:#111827;
 }
+
+.bullet-target-label {
+  position:absolute;
+  top:-22px;
+  transform:translateX(-50%);
+  font-size:12px;
+  font-weight:bold;
+  color:#111827;
+}
+
 .bullet-label {
   display:flex;
   justify-content:space-between;
@@ -124,12 +137,13 @@ th { background:#e5e7eb; }
   </div>
 </div>
 
-<!-- ✅ Bullet Chart -->
+<!-- ✅ Bullet Chart (with values) -->
 <div class="bullet-box">
   <div class="bullet-title">Performance vs Target</div>
   <div class="bullet-bg">
-    <div id="bulletResult" class="bullet-result" style="width:0%"></div>
-    <div id="bulletTarget" class="bullet-target" style="left:0%"></div>
+    <div id="bulletResult" class="bullet-result">0%</div>
+    <div id="bulletTarget" class="bullet-target"></div>
+    <div id="bulletTargetLabel" class="bullet-target-label">0%</div>
   </div>
   <div class="bullet-label">
     <span>0%</span>
@@ -165,11 +179,14 @@ const cardTarget  = document.getElementById("cardTarget");
 
 const bulletResult = document.getElementById("bulletResult");
 const bulletTarget = document.getElementById("bulletTarget");
+const bulletTargetLabel = document.getElementById("bulletTargetLabel");
 
 let rows = [];
 
 Papa.parse(sheetUrl,{
-  download:true, header:true, skipEmptyLines:true,
+  download:true,
+  header:true,
+  skipEmptyLines:true,
   complete(res){
     rows = res.data;
     rfSel.innerHTML =
@@ -221,9 +238,16 @@ function render(){
   cardResult.textContent  = sumResult.toFixed(2) + " %";
   cardTarget.textContent  = sumTarget.toFixed(2) + " %";
 
-  // ✅ Bullet Chart sync กับ Card
-  bulletResult.style.width = Math.min(sumResult,100) + "%";
-  bulletTarget.style.left  = Math.min(sumTarget,100) + "%";
+  // ✅ Bullet Chart sync + labels
+  const resPct = Math.min(sumResult,100);
+  const tarPct = Math.min(sumTarget,100);
+
+  bulletResult.style.width = resPct + "%";
+  bulletResult.textContent = sumResult.toFixed(1) + "%";
+
+  bulletTarget.style.left = tarPct + "%";
+  bulletTargetLabel.style.left = tarPct + "%";
+  bulletTargetLabel.textContent = sumTarget.toFixed(1) + "%";
 }
 
 rfSel.onchange = render;
@@ -231,3 +255,4 @@ qSel.onchange  = render;
 </script>
 </body>
 </html>
+``
