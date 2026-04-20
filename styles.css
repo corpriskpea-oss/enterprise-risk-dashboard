@@ -1,142 +1,89 @@
-/* ===== A) Global ===== */
-* { box-sizing: border-box; }
+/* ==========================
+   DIMENSION PATCH (1:1 SAFE)
+   ========================== */
+
+/* 1️⃣ พื้นหลังรวม = สร้าง layer */
 body {
-  margin:0;
-  font-family: Arial, "Segoe UI", sans-serif;
-  background:#f3f4f6;
-  color:#111827;
+  background: #f4f6fa;
 }
 
-/* ===== Layout ===== */
-.layout { display:flex; height:100vh; }
-.sidebar {
-  width:240px;
-  background:#0f172a;
-  color:white;
-  padding:16px;
-}
-.sidebar h3 {
-  margin:0 0 16px 0;
-  font-size:18px;
-}
-.sidebar button {
-  width:100%;
-  padding:10px;
-  margin-bottom:8px;
-  background:none;
-  border:none;
-  color:white;
-  text-align:left;
-  border-radius:4px;
-  cursor:pointer;
-}
-.sidebar button:hover,
-.sidebar button.active {
-  background:#334155;
+/* 2️⃣ กล่องหลักทุกชนิด */
+.card,
+.panel,
+.box,
+.widget {
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  border-radius: 12px;
+
+  border: 1px solid rgba(0,0,0,.04);
+  box-shadow:
+    0 4px 6px rgba(0,0,0,.04),
+    0 12px 20px rgba(0,0,0,.08);
+
+  transition:
+    box-shadow .2s ease,
+    transform .2s ease;
 }
 
-/* Content */
-.content {
-  flex:1;
-  background:#f3f4f6;
-}
-iframe {
-  width:100%;
-  height:100%;
-  border:none;
-  background:white;
-}
-
-/* ===== Section spacing ===== */
-.section { margin-bottom:28px; }
-
-/* ===== B) Cards ===== */
-.cards {
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-  gap:14px;
-  margin-bottom:26px;
-}
-.card {
-  padding:14px 16px;
-  border-radius:8px;
-  color:white;
-}
-.card b {
-  display:block;
-  font-size:13px;
-  margin-bottom:4px;
-}
-.card .value {
-  font-size:20px;
-  font-weight:600;
-}
-.card.green{background:#16a34a;}
-.card.red{background:#dc2626;}
-.card.blue{background:#2563eb;}
-.card.gray{background:#6b7280;}
-
-/* ===== C) Bullet Chart ===== */
-.bullet-box { margin:20px 0 30px 0; }
-.bullet-title { font-weight:600; font-size:14px; margin-bottom:6px; }
-.bullet-bg {
-  position:relative;
-  height:26px;
-  background:#e5e7eb;
-  border-radius:6px;
-}
-.bullet-result {
-  position:absolute;
-  height:100%;
-  background:#2563eb;
-  border-radius:6px 0 0 6px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  padding-right:6px;
-  color:white;
-  font-size:12px;
-  font-weight:600;
-}
-.bullet-target {
-  position:absolute;
-  top:-6px;
-  width:3px;
-  height:38px;
-  background:#111827;
-}
-.bullet-target-label {
-  position:absolute;
-  top:-22px;
-  transform:translateX(-50%);
-  font-size:12px;
-  font-weight:600;
-}
-.bullet-label {
-  display:flex;
-  justify-content:space-between;
-  font-size:12px;
-  color:#374151;
-  margin-top:4px;
+/* 3️⃣ Hover = มิติเชิง UX */
+.card:hover,
+.panel:hover,
+.box:hover,
+.widget:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 8px 14px rgba(0,0,0,.08),
+    0 22px 36px rgba(0,0,0,.14);
 }
 
-/* ===== D) Table ===== */
-table {
-  width:100%;
-  border-collapse:collapse;
-  font-size:13px;
+/* 4️⃣ Section แยกชั้น */
+.section,
+.content,
+.module {
+  margin-bottom: 20px;
 }
-th {
-  background:#e5e7eb;
-  font-weight:600;
-  padding:8px;
-  border:1px solid #d1d5db;
-  text-align:left;
+
+/* 5️⃣ ตัวเลข / KPI */
+.value,
+.kpi,
+.metric {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.1;
 }
-td {
-  padding:8px;
-  border:1px solid #e5e7eb;
+
+/* 6️⃣ Label รอง */
+.label,
+.subtitle,
+.meta {
+  font-size: 13px;
+  opacity: .75;
 }
-td.good { background:#dcfce7; font-weight:600; }
-td.bad  { background:#fee2e2; font-weight:600; }
-tbody tr:hover { background:#f9fafb; }
+
+/* 7️⃣ List item ให้รู้สึกคลิกได้ */
+.list-item,
+.row-item,
+.table-row {
+  border-radius: 8px;
+  transition: background .15s ease;
+}
+
+.list-item:hover,
+.row-item:hover,
+.table-row:hover {
+  background: rgba(245,248,255,.9);
+}
+
+/* 8️⃣ Button ยกขึ้นเล็กน้อย */
+button,
+.btn {
+  border-radius: 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,.15);
+  transition: transform .15s ease;
+}
+
+button:hover,
+.btn:hover {
+  transform: scale(1.05);
+}
+``
