@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Enterprise Risk Dashboard – v4.01 (Risk Response)</title>
 
-<!-- ✅ FIX: PapaParse -->
+<!-- ✅ PapaParse -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -24,23 +24,56 @@ body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
 
 .controls select { padding:6px; margin-right:10px; }
 
-.cards, .grids { display:flex; gap:12px; margin:16px 0; }
-
-.card, .grid {
+.cards {
+  display:flex; gap:12px; margin:16px 0;
+}
+.card {
   flex:1; padding:14px; border-radius:8px;
   font-size:14px; color:white;
 }
-
 .green { background:#16a34a; }
 .red { background:#dc2626; }
 .blue { background:#2563eb; }
 .gray { background:#6b7280; }
 
-.grid { text-align:center; }
-.grid b { display:block; font-size:28px; margin-top:8px; }
+/* ===== Bullet Chart ===== */
+.bullet-box {
+  margin:20px 0;
+}
+.bullet-title {
+  font-weight:bold;
+  margin-bottom:6px;
+}
+.bullet-bg {
+  position:relative;
+  height:22px;
+  background:#e5e7eb;
+  border-radius:6px;
+}
+.bullet-result {
+  position:absolute;
+  height:100%;
+  background:#2563eb;
+  border-radius:6px 0 0 6px;
+}
+.bullet-target {
+  position:absolute;
+  top:-4px;
+  width:3px;
+  height:30px;
+  background:#111827;
+}
+.bullet-label {
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  margin-top:4px;
+}
 
 table { width:100%; border-collapse:collapse; }
-th, td { border:1px solid #ddd; padding:8px; font-size:14px; }
+th, td {
+  border:1px solid #ddd; padding:8px; font-size:14px;
+}
 th { background:#e5e7eb; }
 
 .good { background:#dcfce7; }
@@ -91,19 +124,16 @@ th { background:#e5e7eb; }
   </div>
 </div>
 
-<!-- ✅ Grid Dashboard -->
-<div class="grids">
-  <div class="grid green">
-    Achieved
-    <b id="gridAchieved">0</b>
+<!-- ✅ Bullet Chart -->
+<div class="bullet-box">
+  <div class="bullet-title">Performance vs Target</div>
+  <div class="bullet-bg">
+    <div id="bulletResult" class="bullet-result" style="width:0%"></div>
+    <div id="bulletTarget" class="bullet-target" style="left:0%"></div>
   </div>
-  <div class="grid red">
-    Below Target
-    <b id="gridBelow">0</b>
-  </div>
-  <div class="grid blue">
-    Weighted Performance (%)
-    <b id="gridPerf">0</b>
+  <div class="bullet-label">
+    <span>0%</span>
+    <span>100%</span>
   </div>
 </div>
 
@@ -121,12 +151,11 @@ th { background:#e5e7eb; }
 </div>
 
 <script>
-/* ✅ Sheet URL (ID + gid ถูกต้อง) */
 const sheetUrl =
   "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=1852497314";
 
 const rfSel = document.getElementById("rf");
-const qSel = document.getElementById("q");
+const qSel  = document.getElementById("q");
 const tbody = document.getElementById("tbody");
 
 const cardSuccess = document.getElementById("cardSuccess");
@@ -134,25 +163,19 @@ const cardFail    = document.getElementById("cardFail");
 const cardResult  = document.getElementById("cardResult");
 const cardTarget  = document.getElementById("cardTarget");
 
-const gridAchieved = document.getElementById("gridAchieved");
-const gridBelow    = document.getElementById("gridBelow");
-const gridPerf     = document.getElementById("gridPerf");
+const bulletResult = document.getElementById("bulletResult");
+const bulletTarget = document.getElementById("bulletTarget");
 
 let rows = [];
 
-/* ✅ Load Data */
 Papa.parse(sheetUrl,{
-  download:true,
-  header:true,
-  skipEmptyLines:true,
+  download:true, header:true, skipEmptyLines:true,
   complete(res){
     rows = res.data;
-
     rfSel.innerHTML =
       `<option value="ALL">ALL</option>` +
       [...new Set(rows.map(r=>r.RF_GroupName))]
         .map(r=>`<option value="${r}">${r}</option>`).join("");
-
     render();
   }
 });
@@ -164,15 +187,15 @@ function render(){
   const q  = qSel.value;
 
   const filtered = rows.filter(r =>
-    (rf === "ALL" || r.RF_GroupName === rf) &&
-    r.Quarter === q
+    (rf==="ALL" || r.RF_GroupName===rf) &&
+    r.Quarter===q
   );
 
-  let success = 0, fail = 0;
-  let sumResult = 0, sumTarget = 0;
+  let success=0, fail=0;
+  let sumResult=0, sumTarget=0;
 
   filtered.forEach(r=>{
-    const w   = +r.PlanWeightPercent;
+    const w = +r.PlanWeightPercent;
     const res = +r.ResultPercent;
     const tar = +r.TargetLevel5;
 
@@ -189,7 +212,7 @@ function render(){
         <td>${r.PlanName}</td>
         <td>${w}</td>
         <td>${tar}</td>
-        <td class="${res>=tar ? "good":"bad"}">${res}</td>
+        <td class="${res>=tar?"good":"bad"}">${res}</td>
       </tr>`;
   });
 
@@ -198,9 +221,9 @@ function render(){
   cardResult.textContent  = sumResult.toFixed(2) + " %";
   cardTarget.textContent  = sumTarget.toFixed(2) + " %";
 
-  gridAchieved.textContent = success;
-  gridBelow.textContent    = fail;
-  gridPerf.textContent     = sumResult.toFixed(1);
+  // ✅ Bullet Chart sync กับ Card
+  bulletResult.style.width = Math.min(sumResult,100) + "%";
+  bulletTarget.style.left  = Math.min(sumTarget,100) + "%";
 }
 
 rfSel.onchange = render;
