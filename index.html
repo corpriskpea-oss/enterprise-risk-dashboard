@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.05 (KRI)</title>
+<title>Enterprise Risk Dashboard – v2.05.1 (KRI)</title>
 
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -29,15 +29,10 @@ body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
 
 .content { flex:1; padding:24px; background:white; }
 
-.toolbar {
-  margin-bottom:14px;
-  display:flex; gap:12px; align-items:center;
-}
+.toolbar { margin-bottom:14px; display:flex; gap:12px; align-items:center; }
 select { padding:6px 10px; }
 
-.summary {
-  display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;
-}
+.summary { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
 .card {
   border-radius:8px; padding:12px 16px;
   min-width:180px; border:1px solid #e5e7eb;
@@ -64,7 +59,7 @@ th { background:#e5e7eb; text-align:center; }
 <div id="root"></div>
 
 <script type="text/babel">
-/* ================= Utils ================= */
+/* ================= Utilities ================= */
 function toNumber(val) {
   if (val === null || val === undefined) return NaN;
   return Number(String(val).replace(/,/g, ""));
@@ -73,7 +68,7 @@ function isNumeric(val) {
   return !isNaN(toNumber(val));
 }
 
-/* ✅ แปลงค่า KRI เป็น “ค่าความเสี่ยง” */
+/* ✅ แปลงค่าเป็น “ค่าความเสี่ยง” (LOW_GOOD fix) */
 function getRiskValue(row) {
   const v = toNumber(row.KRI_Status);
   const ra = toNumber(row.RA);
@@ -82,10 +77,11 @@ function getRiskValue(row) {
   if (!isNumeric(v) || !isNumeric(ra) || !isNumeric(rt)) return null;
 
   if (row.Direction === "LOW_GOOD") {
-    // น้อยดี → มากเสี่ยง
-    return Math.max(0, rt + (v - rt));
+    // น้อยดี → เสี่ยงเมื่อสูงกว่าเป้าหมาย
+    // KRI ≤ RA -> 0 (เขียว), RA<KRI<RT -> เหลือง, KRI≥RT -> แดง
+    return Math.max(0, v - ra);
   }
-  // HIGH_GOOD (default)
+  // HIGH_GOOD (มากดี)
   return v;
 }
 
@@ -97,14 +93,10 @@ function useKRIData() {
   React.useEffect(() => {
     const url =
       "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339";
-
     fetch(url)
       .then(res => res.text())
       .then(csv => {
-        const parsed = Papa.parse(csv, {
-          header: true,
-          skipEmptyLines: true
-        });
+        const parsed = Papa.parse(csv, { header:true, skipEmptyLines:true });
         setRows(parsed.data);
         setLoading(false);
       });
@@ -118,7 +110,6 @@ function RiskMeter({ riskValue, ra, rt }) {
   if (ra === 0 && rt === 0) {
     return <span className="badge">ยังไม่กำหนดเกณฑ์</span>;
   }
-
   const max = Math.max(riskValue, ra) * 1.1;
   const toAngle = v => Math.min((v / max) * 180, 180);
 
@@ -136,12 +127,9 @@ function RiskMeter({ riskValue, ra, rt }) {
       <path d={`M20 90 A80 80 0 0 1 ${rtP.x} ${rtP.y}`} stroke="#dc2626" strokeWidth="16" fill="none"/>
       <path d={`M${rtP.x} ${rtP.y} A80 80 0 0 1 ${raP.x} ${raP.y}`} stroke="#facc15" strokeWidth="16" fill="none"/>
       <path d={`M${raP.x} ${raP.y} A80 80 0 0 1 180 90`} stroke="#16a34a" strokeWidth="16" fill="none"/>
-
       <line x1="100" y1="90" x2={valP.x} y2={valP.y} stroke="#111827" strokeWidth="3"/>
       <circle cx="100" cy="90" r="4" fill="#111827"/>
-      <text x="100" y="115" textAnchor="middle" fontSize="12">
-        {riskValue}
-      </text>
+      <text x="100" y="115" textAnchor="middle" fontSize="12">{riskValue}</text>
     </svg>
   );
 }
@@ -163,19 +151,17 @@ function App() {
   const summary = React.useMemo(() => {
     const map = {};
     filtered.forEach(r => {
-      if (!map[r.RF_GroupName]) {
-        map[r.RF_GroupName] = { red:0, yellow:0, green:0 };
-      }
-
+      if (!map[r.RF_GroupName]) map[r.RF_GroupName] = { red:0, yellow:0, green:0 };
       const riskVal = getRiskValue(r);
       if (riskVal === null) return;
 
       const ra = toNumber(r.RA);
       const rt = toNumber(r.RT);
 
-      if (riskVal < rt) map[r.RF_GroupName].red++;
-      else if (riskVal < ra) map[r.RF_GroupName].yellow++;
-      else map[r.RF_GroupName].green++;
+      if (riskVal < 0) return;
+      if (riskVal < (rt - ra)) map[r.RF_GroupName].green++;
+      else if (riskVal < (rt - ra) * 2) map[r.RF_GroupName].yellow++;
+      else map[r.RF_GroupName].red++;
     });
     return map;
   }, [filtered]);
@@ -210,9 +196,9 @@ function App() {
                 <div key={rf} className="card">
                   <h4>{rf}</h4>
                   <div className="counts">
-                    <span className="red">🔴 {s.red}</span>
-                    <span className="yellow">🟡 {s.yellow}</span>
                     <span className="green">🟢 {s.green}</span>
+                    <span className="yellow">🟡 {s.yellow}</span>
+                    <span className="red">🔴 {s.red}</span>
                   </div>
                 </div>
               ))}
@@ -221,14 +207,8 @@ function App() {
             <table>
               <thead>
                 <tr>
-                  <th>RF</th>
-                  <th>Month</th>
-                  <th>KRI_Name</th>
-                  <th>Units</th>
-                  <th>KRI_Status</th>
-                  <th>RA</th>
-                  <th>RT</th>
-                  <th>Risk Meter</th>
+                  <th>RF</th><th>Month</th><th>KRI_Name</th><th>Units</th>
+                  <th>KRI_Status</th><th>RA</th><th>RT</th><th>Risk Meter</th>
                 </tr>
               </thead>
               <tbody>
@@ -245,11 +225,7 @@ function App() {
                       <td>{r.RT}</td>
                       <td>
                         {riskVal !== null
-                          ? <RiskMeter
-                              riskValue={riskVal}
-                              ra={toNumber(r.RA)}
-                              rt={toNumber(r.RT)}
-                            />
+                          ? <RiskMeter riskValue={riskVal} ra={toNumber(r.RA)} rt={toNumber(r.RT)} />
                           : <span className="badge">KRI เชิงคุณภาพ</span>
                         }
                       </td>
@@ -265,7 +241,7 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
 </html>
