@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.06 (KRI)</title>
+<title>Enterprise Risk Dashboard – v2.06.1 (KRI)</title>
 
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -17,24 +17,16 @@
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
 .layout { display:flex; min-height:100vh; }
-
 .sidebar { width:240px; background:#0f172a; color:white; padding:16px; }
-.sidebar button {
-  width:100%; padding:10px; margin-bottom:8px;
-  background:none; border:none; color:white; text-align:left;
-}
+.sidebar button { width:100%; padding:10px; margin-bottom:8px; background:none; border:none; color:white; text-align:left; }
 .sidebar button.active { background:#334155; }
-
 .content { flex:1; padding:24px; background:white; }
 
 .toolbar { margin-bottom:14px; display:flex; gap:12px; align-items:center; }
 select { padding:6px 10px; }
 
-.summary { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
-.card {
-  border-radius:8px; padding:12px 16px;
-  min-width:180px; border:1px solid #e5e7eb;
-}
+.summary { display:flex; gap:12px; margin-bottom:16px; }
+.card { border-radius:8px; padding:12px 16px; min-width:180px; border:1px solid #e5e7eb; }
 .counts { display:flex; gap:10px; font-size:13px; }
 .green { color:#16a34a; } .yellow { color:#ca8a04; } .red { color:#dc2626; }
 
@@ -42,8 +34,8 @@ table { width:100%; border-collapse:collapse; }
 th, td { border:1px solid #ddd; padding:8px; }
 th { background:#e5e7eb; }
 
-.badge { padding:4px 8px; border-radius:6px; font-size:12px; background:#e5e7eb; }
 .gauge { width:140px; height:80px; }
+.badge { padding:4px 8px; background:#e5e7eb; border-radius:6px; }
 </style>
 </head>
 
@@ -51,175 +43,124 @@ th { background:#e5e7eb; }
 <div id="root"></div>
 
 <script type="text/babel">
-/* ================= Utils ================= */
-function toNumber(v){
-  if (v===null || v===undefined) return NaN;
-  return Number(String(v).replace(/,/g,""));
-}
-const isNum = v => !isNaN(toNumber(v));
+const toNum = v => Number(String(v).replace(/,/g,""));
+const isNum = v => !isNaN(toNum(v));
 
-/* ================= Risk Level ================= */
 function getRiskLevel(row){
-  const kri = toNumber(row.KRI_Status);
-  const ra  = toNumber(row.RA);
-  const rt  = toNumber(row.RT);
-  if (!isNum(kri)||!isNum(ra)||!isNum(rt)) return null;
+  const k=toNum(row.KRI_Status), ra=toNum(row.RA), rt=toNum(row.RT);
+  if(!isNum(k)||!isNum(ra)||!isNum(rt)) return null;
 
-  if (row.Direction==="LOW_GOOD"){
-    if (kri <= ra) return "green";
-    if (kri <  rt) return "yellow";
+  if(row.Direction==="LOW_GOOD"){
+    if(k<=ra) return "green";
+    if(k<rt) return "yellow";
     return "red";
+  } else {
+    if(k<rt) return "red";
+    if(k<ra) return "yellow";
+    return "green";
   }
-  // HIGH_GOOD
-  if (kri <  rt) return "red";
-  if (kri <  ra) return "yellow";
-  return "green";
 }
 
-/* ================= Data ================= */
-function useKRIData(){
-  const [rows,setRows]=React.useState([]);
-  const [loading,setLoading]=React.useState(true);
-
-  React.useEffect(()=>{
-    const url =
-      "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339";
-    fetch(url).then(r=>r.text()).then(csv=>{
-      const p=Papa.parse(csv,{header:true,skipEmptyLines:true});
-      setRows(p.data); setLoading(false);
-    });
-  },[]);
-  return {rows,loading};
-}
-
-/* ================= Gauge ================= */
-function RiskMeter({kri, ra, rt, direction, level}){
-  if (!isNum(kri)||!isNum(ra)||!isNum(rt))
-    return <span className="badge">KRI เชิงคุณภาพ</span>;
-
-  const max = Math.max(kri, ra, rt) * 1.1;
-  const angle = Math.min((kri / max) * 180, 180);
-
-  const polar = a => {
+function RiskMeter({kri,ra,rt,direction}){
+  if(!isNum(kri)||!isNum(ra)||!isNum(rt)) return <span className="badge">KRI เชิงคุณภาพ</span>;
+  const max=Math.max(kri,ra,rt)*1.1;
+  const ang=v=>Math.min(v/max*180,180);
+  const pol=a=>{
     const r=(a-180)*Math.PI/180;
-    return { x:100+80*Math.cos(r), y:90+80*Math.sin(r) };
+    return {x:100+80*Math.cos(r),y:90+80*Math.sin(r)};
   };
 
-  const rtP = polar((rt/max)*180);
-  const raP = polar((ra/max)*180);
-  const vP  = polar(angle);
+  let zones;
+  if(direction==="LOW_GOOD"){
+    zones=[
+      {from:0,to:ra,color:"#16a34a"},
+      {from:ra,to:rt,color:"#facc15"},
+      {from:rt,to:max,color:"#dc2626"},
+    ];
+  } else {
+    zones=[
+      {from:0,to:rt,color:"#dc2626"},
+      {from:rt,to:ra,color:"#facc15"},
+      {from:ra,to:max,color:"#16a34a"},
+    ];
+  }
 
   return (
     <svg viewBox="0 0 200 120" className="gauge">
-      <path d={`M20 90 A80 80 0 0 1 ${rtP.x} ${rtP.y}`}
-        stroke="#dc2626" strokeWidth="16" fill="none"/>
-      <path d={`M${rtP.x} ${rtP.y} A80 80 0 0 1 ${raP.x} ${raP.y}`}
-        stroke="#facc15" strokeWidth="16" fill="none"/>
-      <path d={`M${raP.x} ${raP.y} A80 80 0 0 1 180 90`}
-        stroke="#16a34a" strokeWidth="16" fill="none"/>
-
-      <line x1="100" y1="90" x2={vP.x} y2={vP.y}
-        stroke="#111827" strokeWidth="3"/>
+      {zones.map((z,i)=>{
+        const p1=pol(ang(z.from)), p2=pol(ang(z.to));
+        return <path key={i}
+          d={`M${p1.x} ${p1.y} A80 80 0 0 1 ${p2.x} ${p2.y}`}
+          stroke={z.color} strokeWidth="16" fill="none"/>;
+      })}
+      <line x1="100" y1="90"
+            x2={pol(ang(kri)).x}
+            y2={pol(ang(kri)).y}
+            stroke="#111827" strokeWidth="3"/>
       <circle cx="100" cy="90" r="4" fill="#111827"/>
-      <text x="100" y="115" textAnchor="middle" fontSize="12">
-        {kri}
-      </text>
+      <text x="100" y="115" textAnchor="middle" fontSize="12">{kri}</text>
     </svg>
   );
 }
 
-/* ================= App ================= */
 function App(){
-  const {rows,loading}=useKRIData();
+  const [rows,setRows]=React.useState([]);
   const [rf,setRf]=React.useState("ALL");
   const [m,setM]=React.useState("ALL");
 
-  const rfList=["ALL",...new Set(rows.map(r=>r.RF_GroupName))];
-  const mList =["ALL",...new Set(rows.map(r=>r.Month))];
+  React.useEffect(()=>{
+    fetch("https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339")
+      .then(r=>r.text()).then(csv=>{
+        setRows(Papa.parse(csv,{header:true}).data);
+      });
+  },[]);
 
   const filtered=rows.filter(r=>
-    (rf==="ALL"||r.RF_GroupName===rf) &&
-    (m==="ALL" ||r.Month===m)
+    (rf==="ALL"||r.RF_GroupName===rf)&&(m==="ALL"||r.Month===m)
   );
-
-  const summary=React.useMemo(()=>{
-    const o={};
-    filtered.forEach(r=>{
-      const rf=r.RF_GroupName;
-      if(!o[rf]) o[rf]={green:0,yellow:0,red:0};
-      const lvl=getRiskLevel(r);
-      if(lvl) o[rf][lvl]++;
-    });
-    return o;
-  },[filtered]);
 
   return (
     <div className="layout">
-      <div className="sidebar">
-        <h3>Enterprise Risk</h3>
-        <button className="active">KRI</button>
-      </div>
+      <div className="sidebar"><h3>Enterprise Risk</h3><button className="active">KRI</button></div>
       <div className="content">
-        <h2>KRI Report</h2>
-        {loading&&<p>กำลังโหลดข้อมูล…</p>}
-        {!loading&&(
-          <>
-            <div className="toolbar">
-              RF:
-              <select value={rf} onChange={e=>setRf(e.target.value)}>
-                {rfList.map(x=><option key={x}>{x}</option>)}
-              </select>
-              Month:
-              <select value={m} onChange={e=>setM(e.target.value)}>
-                {mList.map(x=><option key={x}>{x}</option>)}
-              </select>
-            </div>
-
-            <div className="summary">
-              {Object.entries(summary).map(([k,s])=>(
-                <div className="card" key={k}>
-                  <b>{k}</b>
-                  <div className="counts">
-                    <span className="green">🟢 {s.green}</span>
-                    <span className="yellow">🟡 {s.yellow}</span>
-                    <span className="red">🔴 {s.red}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <table>
-              <thead>
-                <tr>
-                  <th>RF</th><th>Month</th><th>KRI_Name</th><th>Units</th>
-                  <th>KRI_Status</th><th>RA</th><th>RT</th><th>Risk Meter</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r,i)=>
-                  <tr key={i}>
-                    <td>{r.RF_GroupName}</td>
-                    <td>{r.Month}</td>
-                    <td>{r.KRI_Name}</td>
-                    <td>{r.Units}</td>
-                    <td>{r.KRI_Status}</td>
-                    <td>{r.RA}</td>
-                    <td>{r.RT}</td>
-                    <td>
-                      <RiskMeter
-                        kri={toNumber(r.KRI_Status)}
-                        ra={toNumber(r.RA)}
-                        rt={toNumber(r.RT)}
-                        direction={r.Direction}
-                        level={getRiskLevel(r)}
-                      />
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </>
-        )}
+        <div className="toolbar">
+          RF:
+          <select value={rf} onChange={e=>setRf(e.target.value)}>
+            {["ALL",...new Set(rows.map(r=>r.RF_GroupName))].map(x=><option key={x}>{x}</option>)}
+          </select>
+          Month:
+          <select value={m} onChange={e=>setM(e.target.value)}>
+            {["ALL",...new Set(rows.map(r=>r.Month))].map(x=><option key={x}>{x}</option>)}
+          </select>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>RF</th><th>Month</th><th>KRI</th><th>Units</th>
+              <th>Status</th><th>RA</th><th>RT</th><th>Meter</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((r,i)=>
+              <tr key={i}>
+                <td>{r.RF_GroupName}</td>
+                <td>{r.Month}</td>
+                <td>{r.KRI_Name}</td>
+                <td>{r.Units}</td>
+                <td>{r.KRI_Status}</td>
+                <td>{r.RA}</td>
+                <td>{r.RT}</td>
+                <td>
+                  <RiskMeter
+                    kri={toNum(r.KRI_Status)}
+                    ra={toNum(r.RA)}
+                    rt={toNum(r.RT)}
+                    direction={r.Direction}/>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
