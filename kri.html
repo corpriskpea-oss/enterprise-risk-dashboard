@@ -18,9 +18,7 @@
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
 .layout { display:flex; min-height:100vh; }
-.sidebar { width:240px; background:#0f172a; color:white; padding:16px; }
-.sidebar button { width:100%; padding:10px; margin-bottom:8px; background:none; border:none; color:white; text-align:left; }
-.sidebar button.active { background:#334155; }
+
 .content { flex:1; padding:24px; background:white; }
 
 .toolbar { margin-bottom:14px; display:flex; gap:12px; align-items:center; }
@@ -122,7 +120,7 @@ function App(){
 
   return (
     <div className="layout">
-      <div className="sidebar"><h3>Enterprise Risk</h3><button className="active">KRI</button></div>
+      
       <div className="content">
         <div className="toolbar">
           RF:
