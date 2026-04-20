@@ -2,276 +2,53 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Enterprise Risk Dashboard – v4.02 (Risk Response)</title>
+<title>Enterprise Risk Dashboard – v.final.1.00</title>
 
-<!-- ✅ PapaParse (ถูกต้อง) -->
-<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-
-<style>
-/* ===== A) Global ===== */
-* { box-sizing: border-box; }
-body {
-  margin:0;
-  font-family: Arial, "Segoe UI", sans-serif;
-  background:#f3f4f6;
-  color:#111827;
-}
-h2 {
-  font-size:20px;
-  font-weight:600;
-  margin-bottom:16px;
-}
-
-/* Layout */
-.layout { display:flex; min-height:100vh; }
-.sidebar {
-  width:240px; background:#0f172a; color:white; padding:16px;
-}
-.sidebar button {
-  width:100%; padding:10px; margin-bottom:8px;
-  background:none; border:none; color:white;
-  text-align:left; border-radius:4px;
-}
-.sidebar button.active,
-.sidebar button:hover { background:#334155; }
-
-.content {
-  flex:1; padding:24px 28px; background:white;
-}
-
-/* Controls */
-.controls { margin-bottom:16px; }
-.controls select {
-  padding:6px 8px; font-size:13px; margin-right:10px;
-}
-
-/* ===== B) Cards ===== */
-.cards {
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-  gap:14px;
-  margin-bottom:26px;
-}
-
-.card {
-  padding:14px 16px;
-  border-radius:8px;
-  color:white;
-}
-.card b {
-  display:block;
-  font-size:13px;
-  margin-bottom:4px;
-}
-.card .value {
-  font-size:20px;
-  font-weight:600;
-}
-
-.green{background:#16a34a;}
-.red{background:#dc2626;}
-.blue{background:#2563eb;}
-.gray{background:#6b7280;}
-
-/* ===== C) Bullet Chart ===== */
-.bullet-box { margin:20px 0 30px 0; }
-.bullet-title {
-  font-weight:600; font-size:14px; margin-bottom:6px;
-}
-.bullet-bg {
-  position:relative; height:26px;
-  background:#e5e7eb; border-radius:6px;
-}
-.bullet-result {
-  position:absolute; height:100%;
-  background:#2563eb;
-  border-radius:6px 0 0 6px;
-  display:flex; align-items:center;
-  justify-content:flex-end;
-  padding-right:6px;
-  color:white; font-size:12px; font-weight:600;
-}
-.bullet-target {
-  position:absolute; top:-6px;
-  width:3px; height:38px; background:#111827;
-}
-.bullet-target-label {
-  position:absolute; top:-22px;
-  transform:translateX(-50%);
-  font-size:12px; font-weight:600;
-}
-.bullet-label {
-  display:flex; justify-content:space-between;
-  font-size:12px; color:#374151; margin-top:4px;
-}
-
-/* ===== D) Table ===== */
-table {
-  width:100%; border-collapse:collapse; font-size:13px;
-}
-th {
-  background:#e5e7eb; font-weight:600;
-  padding:8px; border:1px solid #d1d5db;
-  text-align:left;
-}
-td {
-  padding:8px; border:1px solid #e5e7eb;
-  vertical-align:top;
-}
-td.good {
-  background:#dcfce7; font-weight:600;
-}
-td.bad {
-  background:#fee2e2; font-weight:600;
-}
-tbody tr:hover { background:#f9fafb; }
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 <div class="layout">
 
-<aside class="sidebar">
-  <h3>Enterprise Risk</h3>
-  <button class="active">Risk Response</button>
-</aside>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h3>Enterprise Risk</h3>
 
-<div class="content">
-<h2>Risk Response</h2>
+    <button class="active" onclick="loadPage('plan.html', this)">
+      Plan
+    </button>
 
-<div class="controls">
-  RF:
-  <select id="rf"></select>
-  Quarter:
-  <select id="q">
-    <option value="Q1/2569">Q1/2569</option>
-    <option value="Q2/2569">Q2/2569</option>
-    <option value="Q3/2569">Q3/2569</option>
-    <option value="Q4/2569">Q4/2569</option>
-  </select>
-</div>
+    <button onclick="loadPage('kri.html', this)">
+      KRI
+    </button>
 
-<div class="cards">
-  <div class="card green">
-    <b>แผนที่สำเร็จ</b>
-    <div class="value" id="cardSuccess">0 แผน</div>
-  </div>
-  <div class="card red">
-    <b>แผนต่ำกว่าเป้า</b>
-    <div class="value" id="cardFail">0 แผน</div>
-  </div>
-  <div class="card blue">
-    <b>ร้อยละผลการดำเนินงาน</b>
-    <div class="value" id="cardResult">0 %</div>
-  </div>
-  <div class="card gray">
-    <b>ร้อยละเป้าหมาย</b>
-    <div class="value" id="cardTarget">0 %</div>
-  </div>
-</div>
+    <button onclick="loadPage('matrix.html', this)">
+      Risk Matrix
+    </button>
 
-<div class="bullet-box">
-  <div class="bullet-title">Performance vs Target</div>
-  <div class="bullet-bg">
-    <div id="bulletResult" class="bullet-result">0%</div>
-    <div id="bulletTarget" class="bullet-target"></div>
-    <div id="bulletTargetLabel" class="bullet-target-label">0%</div>
-  </div>
-  <div class="bullet-label">
-    <span>0%</span><span>100%</span>
-  </div>
-</div>
+    <button onclick="loadPage('risk-response.html', this)">
+      Risk Response
+    </button>
+  </aside>
 
-<table>
-<thead>
-<tr>
-  <th>RF</th><th>PlanType</th><th>Order</th><th>PlanName</th>
-  <th>Weight %</th><th>Target</th><th>Result</th>
-</tr>
-</thead>
-<tbody id="tbody"></tbody>
-</table>
+  <!-- Content -->
+  <main class="content">
+    <iframe id="mainFrame" src="plan.html"></iframe>
+  </main>
 
-</div>
 </div>
 
 <script>
-const sheetUrl =
-"https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=1852497314";
+function loadPage(page, btn){
+  document.getElementById("mainFrame").src = page;
 
-const rfSel=document.getElementById("rf");
-const qSel=document.getElementById("q");
-const tbody=document.getElementById("tbody");
+  document.querySelectorAll(".sidebar button")
+    .forEach(b => b.classList.remove("active"));
 
-const cardSuccess=document.getElementById("cardSuccess");
-const cardFail=document.getElementById("cardFail");
-const cardResult=document.getElementById("cardResult");
-const cardTarget=document.getElementById("cardTarget");
-
-const bulletResult=document.getElementById("bulletResult");
-const bulletTarget=document.getElementById("bulletTarget");
-const bulletTargetLabel=document.getElementById("bulletTargetLabel");
-
-let rows=[];
-
-Papa.parse(sheetUrl,{
-  download:true, header:true, skipEmptyLines:true,
-  complete(res){
-    rows=res.data;
-    rfSel.innerHTML=`<option value="ALL">ALL</option>` +
-      [...new Set(rows.map(r=>r.RF_GroupName))]
-      .map(r=>`<option value="${r}">${r}</option>`).join("");
-    render();
-  }
-});
-
-function render(){
-  tbody.innerHTML="";
-  const rf=rfSel.value, q=qSel.value;
-
-  const f=rows.filter(r=>
-    (rf==="ALL"||r.RF_GroupName===rf)&&r.Quarter===q
-  );
-
-  let success=0, fail=0, sumResult=0, sumTarget=0;
-
-  f.forEach(r=>{
-    const w=+r.PlanWeightPercent;
-    const res=+r.ResultPercent;
-    const tar=+r.TargetLevel5;
-    if(res>=tar) success++; else fail++;
-    sumResult+=(w*res)/100;
-    sumTarget+=(w*tar)/100;
-
-    tbody.innerHTML+=`
-      <tr>
-        <td>${r.RF_GroupName}</td>
-        <td>${r.PlanType}</td>
-        <td>${r.PlanOrder}</td>
-        <td>${r.PlanName}</td>
-        <td>${w}</td>
-        <td>${tar}</td>
-        <td class="${res>=tar?"good":"bad"}">${res}</td>
-      </tr>`;
-  });
-
-  cardSuccess.textContent=success+" แผน";
-  cardFail.textContent=fail+" แผน";
-  cardResult.textContent=sumResult.toFixed(2)+" %";
-  cardTarget.textContent=sumTarget.toFixed(2)+" %";
-
-  const rPct=Math.min(sumResult,100);
-  const tPct=Math.min(sumTarget,100);
-
-  bulletResult.style.width=rPct+"%";
-  bulletResult.textContent=sumResult.toFixed(1)+"%";
-  bulletTarget.style.left=tPct+"%";
-  bulletTargetLabel.style.left=tPct+"%";
-  bulletTargetLabel.textContent=sumTarget.toFixed(1)+"%";
+  btn.classList.add("active");
 }
-
-rfSel.onchange=render;
-qSel.onchange=render;
 </script>
+
 </body>
 </html>
+``
