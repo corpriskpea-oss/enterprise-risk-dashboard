@@ -5,8 +5,6 @@
 <title>Enterprise Risk Dashboard – v4.02 (Risk Response)</title>
 
 <link rel="stylesheet" href="styles.css">
-
-<!-- ✅ PapaParse -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -18,7 +16,10 @@ body {
 .layout { display:flex; min-height:100vh; }
 .content { flex:1; padding:24px; background:white; }
 
-.controls select { padding:6px; margin-right:10px; }
+.controls select {
+  padding:6px;
+  margin-right:10px;
+}
 
 .cards {
   display:flex;
@@ -37,50 +38,57 @@ body {
 .blue  { background:#2563eb; }
 .gray  { background:#6b7280; }
 
-/* ===== Bullet Chart ===== */
+/* ================= Bullet Chart ================= */
 .bullet-box { margin:20px 0; }
 .bullet-title { font-weight:bold; margin-bottom:6px; }
 
 .bullet-bg {
-  position:relative;
-  height:26px;
-  background:#e5e7eb;
-  border-radius:6px;
-  overflow:visible;
+  position: relative;
+  height: 26px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: visible;
 }
 
+/* Result bar */
 .bullet-result {
-  position:absolute;
-  height:100%;
-  background:#2563eb;
-  border-radius:6px 0 0 6px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  padding-right:6px;
-  color:white;
-  font-size:12px;
-  font-weight:bold;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: #2563eb;
+  border-radius: 6px 0 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 1;
 }
 
-/* ✅ Target line + label (FIXED) */
+/* Target line */
 .bullet-target {
-  position:absolute;
-  top:-6px;
-  width:3px;
-  height:38px;
-  background:#111827;
+  position: absolute;
+  top: -6px;
+  width: 3px;
+  height: 38px;
+  background: #111827;
+  z-index: 3;
 }
 
+/* Target value */
 .bullet-target-label {
-  position:absolute;
-  top:-18px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:12px;
-  font-weight:bold;
-  color:#111827;
-  white-space:nowrap;
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: #111827;
+  white-space: nowrap;
+  z-index: 4;
 }
 
 .bullet-label {
@@ -90,6 +98,7 @@ body {
   margin-top:4px;
 }
 
+/* ================= Table ================= */
 table {
   width:100%;
   border-collapse:collapse;
@@ -124,7 +133,7 @@ th { background:#e5e7eb; }
   </select>
 </div>
 
-<!-- ✅ Summary Cards -->
+<!-- Summary Cards -->
 <div class="cards">
   <div class="card green">
     <b>แผนที่สำเร็จ</b>
@@ -144,13 +153,12 @@ th { background:#e5e7eb; }
   </div>
 </div>
 
-<!-- ✅ Bullet Chart (FIXED) -->
+<!-- Bullet Chart -->
 <div class="bullet-box">
   <div class="bullet-title">Performance vs Target</div>
   <div class="bullet-bg">
     <div id="bulletResult" class="bullet-result">0%</div>
 
-    <!-- ✅ target + label อยู่ด้วยกัน -->
     <div id="bulletTarget" class="bullet-target">
       <div id="bulletTargetLabel" class="bullet-target-label">0%</div>
     </div>
@@ -257,7 +265,7 @@ function render(){
   cardResult.textContent  = sumResult.toFixed(2) + " %";
   cardTarget.textContent  = sumTarget.toFixed(2) + " %";
 
-  /* ✅ Bullet Chart sync */
+  /* Bullet sync */
   const resPct = Math.min(sumResult,100);
   const tarPct = Math.min(sumTarget,100);
 
