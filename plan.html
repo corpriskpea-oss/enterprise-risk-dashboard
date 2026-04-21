@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v1.0.3 (Plan)</title>
+<title>Enterprise Risk Dashboard – v1.0.4 (Plan)</title>
 
 <link rel="stylesheet" href="styles.css">
 
@@ -17,7 +17,7 @@
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
 .layout { display:flex; min-height:100vh; }
 .content { flex:1; padding:24px; background:white; }
 
@@ -25,7 +25,7 @@ body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
 
 .cards {
   display:grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns:repeat(4,1fr);
   gap:12px;
   margin-bottom:16px;
 }
@@ -34,28 +34,19 @@ body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
   border-radius:8px;
   color:white;
 }
-.card h3 {
-  margin:0;
-  font-size:22px;
-}
-.card p {
-  margin:4px 0 0;
-  font-size:14px;
-}
+.card h3 { margin:0; font-size:22px; }
+.card p { margin-top:4px; font-size:14px; }
 
-.bg-blue  { background:#2563eb; }
-.bg-yellow{ background:#ca8a04; }
-.bg-purple{ background:#7c3aed; }
-.bg-green { background:#16a34a; }
+.bg-blue   { background:#2563eb; }
+.bg-yellow { background:#ca8a04; }
+.bg-purple { background:#7c3aed; }
+.bg-green  { background:#16a34a; }
 
 table { width:100%; border-collapse:collapse; margin-top:12px; }
-th, td { border:1px solid #ddd; padding:8px; vertical-align:top; }
+th, td { border:1px solid #ddd; padding:8px; }
 th { background:#e5e7eb; text-align:center; }
 
-select, button {
-  padding:6px 10px;
-  margin-right:8px;
-}
+select, button { padding:6px 10px; margin-right:8px; }
 </style>
 </head>
 
@@ -75,7 +66,7 @@ function usePlanData() {
       `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
 
     fetch(url)
-      .then(res => res.text())
+      .then(r => r.text())
       .then(csv => {
         const parsed = Papa.parse(csv, { header:true, skipEmptyLines:true });
         setRows(parsed.data);
@@ -96,7 +87,7 @@ function useStatusData() {
       `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Status_Combined`;
 
     fetch(url)
-      .then(res => res.text())
+      .then(r => r.text())
       .then(csv => {
         const parsed = Papa.parse(csv, { header:true, skipEmptyLines:true });
         setRows(parsed.data);
@@ -115,20 +106,35 @@ function App() {
   const [selectedPlan, setSelectedPlan] = React.useState(null);
   const [quarter, setQuarter] = React.useState("Q1");
 
-  /* ---------- Status Summary ---------- */
+  /* ===== ✅ Status Summary (DEDUP by PlanName) ===== */
   const statusSummary = React.useMemo(() => {
-    const total = statusRows.length;
-    const lv1 = statusRows.filter(r => r.Status_Combined === "รอยืนยันข้อมูล | ระดับที่ 1").length;
-    const lv3 = statusRows.filter(r => r.Status_Combined === "รอยืนยันข้อมูล | ระดับที่ 3").length;
-    const done = statusRows.filter(r => r.Status_Combined === "ยืนยันข้อมูลแล้ว").length;
+    const planMap = new Map();
 
-    return { total, lv1, lv3, done };
+    statusRows.forEach(r => {
+      if (r.PlanName && !planMap.has(r.PlanName)) {
+        planMap.set(r.PlanName, r);   // ✅ 1 แผน = 1 แถว
+      }
+    });
+
+    const uniquePlans = Array.from(planMap.values());
+
+    return {
+      total: uniquePlans.length,
+      lv1: uniquePlans.filter(p =>
+        p.Status_Combined === "รอยืนยันข้อมูล | ระดับที่ 1"
+      ).length,
+      lv3: uniquePlans.filter(p =>
+        p.Status_Combined === "รอยืนยันข้อมูล | ระดับที่ 3"
+      ).length,
+      done: uniquePlans.filter(p =>
+        p.Status_Combined === "ยืนยันข้อมูลแล้ว"
+      ).length
+    };
   }, [statusRows]);
 
   /* ---------- RF list ---------- */
   const rfList = React.useMemo(() => {
-    const set = new Set(rows.map(r => r.RF_GroupName));
-    return ["ALL", ...Array.from(set)];
+    return ["ALL", ...new Set(rows.map(r => r.RF_GroupName))];
   }, [rows]);
 
   /* ---------- Group by Plan ---------- */
@@ -178,10 +184,7 @@ function App() {
           <>
             <div className="toolbar">
               <label>RF Group: </label>
-              <select
-                value={rfFilter}
-                onChange={e => setRfFilter(e.target.value)}
-              >
+              <select value={rfFilter} onChange={e => setRfFilter(e.target.value)}>
                 {rfList.map(rf => (
                   <option key={rf} value={rf}>{rf}</option>
                 ))}
@@ -206,9 +209,9 @@ function App() {
                         style={{ cursor:"pointer" }}
                         onClick={() => setSelectedPlan({ name: planName, items })}>
                       <td>{planName}</td>
-                      <td style={{ textAlign:"center" }}>{p.RF_GroupName}</td>
-                      <td style={{ textAlign:"center" }}>{p.ResultPercent}</td>
-                      <td style={{ textAlign:"center" }}>{p.TargetLevel5}</td>
+                      <td align="center">{p.RF_GroupName}</td>
+                      <td align="center">{p.ResultPercent}</td>
+                      <td align="center">{p.TargetLevel5}</td>
                       <td>{p.Status_Combined}</td>
                     </tr>
                   );
@@ -248,9 +251,9 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {selectedPlan.items.map((a, i) => (
+                {selectedPlan.items.map((a,i) => (
                   <tr key={i}>
-                    <td style={{ textAlign:"center" }}>{a.ActivityOrder}</td>
+                    <td align="center">{a.ActivityOrder}</td>
                     <td>{a.ActivityName}</td>
                     <td>{a[detailKey]}</td>
                     <td>{a[problemKey]}</td>
@@ -271,3 +274,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
+``
