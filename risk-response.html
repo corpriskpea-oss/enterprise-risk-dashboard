@@ -5,26 +5,37 @@
 <title>Enterprise Risk Dashboard – v4.02 (Risk Response)</title>
 
 <link rel="stylesheet" href="styles.css">
-<!-- ✅ PapaParse (FIXED) -->
+
+<!-- ✅ PapaParse -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
+body {
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f3f4f6;
+}
 .layout { display:flex; min-height:100vh; }
-
 .content { flex:1; padding:24px; background:white; }
 
 .controls select { padding:6px; margin-right:10px; }
 
-.cards { display:flex; gap:12px; margin:16px 0; }
+.cards {
+  display:flex;
+  gap:12px;
+  margin:16px 0;
+}
 .card {
-  flex:1; padding:14px; border-radius:8px;
-  font-size:14px; color:white;
+  flex:1;
+  padding:14px;
+  border-radius:8px;
+  font-size:14px;
+  color:white;
 }
 .green { background:#16a34a; }
-.red { background:#dc2626; }
-.blue { background:#2563eb; }
-.gray { background:#6b7280; }
+.red   { background:#dc2626; }
+.blue  { background:#2563eb; }
+.gray  { background:#6b7280; }
 
 /* ===== Bullet Chart ===== */
 .bullet-box { margin:20px 0; }
@@ -35,6 +46,7 @@ body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
   height:26px;
   background:#e5e7eb;
   border-radius:6px;
+  overflow:visible;
 }
 
 .bullet-result {
@@ -51,6 +63,7 @@ body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
   font-weight:bold;
 }
 
+/* ✅ Target line + label (FIXED) */
 .bullet-target {
   position:absolute;
   top:-6px;
@@ -61,11 +74,13 @@ body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
 
 .bullet-target-label {
   position:absolute;
-  top:-22px;
+  top:-18px;
+  left:50%;
   transform:translateX(-50%);
   font-size:12px;
   font-weight:bold;
   color:#111827;
+  white-space:nowrap;
 }
 
 .bullet-label {
@@ -75,21 +90,26 @@ body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
   margin-top:4px;
 }
 
-table { width:100%; border-collapse:collapse; }
+table {
+  width:100%;
+  border-collapse:collapse;
+}
 th, td {
-  border:1px solid #ddd; padding:8px; font-size:14px;
+  border:1px solid #ddd;
+  padding:8px;
+  font-size:14px;
 }
 th { background:#e5e7eb; }
 
 .good { background:#dcfce7; }
-.bad { background:#fee2e2; }
+.bad  { background:#fee2e2; }
 </style>
 </head>
 
 <body>
 <div class="layout">
-
 <div class="content">
+
 <h2>Risk Response</h2>
 
 <div class="controls">
@@ -124,14 +144,18 @@ th { background:#e5e7eb; }
   </div>
 </div>
 
-<!-- ✅ Bullet Chart (with values) -->
+<!-- ✅ Bullet Chart (FIXED) -->
 <div class="bullet-box">
   <div class="bullet-title">Performance vs Target</div>
   <div class="bullet-bg">
     <div id="bulletResult" class="bullet-result">0%</div>
-    <div id="bulletTarget" class="bullet-target"></div>
-    <div id="bulletTargetLabel" class="bullet-target-label">0%</div>
+
+    <!-- ✅ target + label อยู่ด้วยกัน -->
+    <div id="bulletTarget" class="bullet-target">
+      <div id="bulletTargetLabel" class="bullet-target-label">0%</div>
+    </div>
   </div>
+
   <div class="bullet-label">
     <span>0%</span>
     <span>100%</span>
@@ -141,8 +165,13 @@ th { background:#e5e7eb; }
 <table>
 <thead>
 <tr>
-  <th>RF</th><th>PlanType</th><th>Order</th><th>PlanName</th>
-  <th>Weight %</th><th>Target</th><th>Result</th>
+  <th>RF</th>
+  <th>PlanType</th>
+  <th>Order</th>
+  <th>PlanName</th>
+  <th>Weight %</th>
+  <th>Target</th>
+  <th>Result</th>
 </tr>
 </thead>
 <tbody id="tbody"></tbody>
@@ -176,10 +205,13 @@ Papa.parse(sheetUrl,{
   skipEmptyLines:true,
   complete(res){
     rows = res.data;
+
     rfSel.innerHTML =
       `<option value="ALL">ALL</option>` +
       [...new Set(rows.map(r=>r.RF_GroupName))]
-        .map(r=>`<option value="${r}">${r}</option>`).join("");
+        .map(r=>`<option value="${r}">${r}</option>`)
+        .join("");
+
     render();
   }
 });
@@ -199,7 +231,7 @@ function render(){
   let sumResult=0, sumTarget=0;
 
   filtered.forEach(r=>{
-    const w = +r.PlanWeightPercent;
+    const w   = +r.PlanWeightPercent;
     const res = +r.ResultPercent;
     const tar = +r.TargetLevel5;
 
@@ -225,7 +257,7 @@ function render(){
   cardResult.textContent  = sumResult.toFixed(2) + " %";
   cardTarget.textContent  = sumTarget.toFixed(2) + " %";
 
-  // ✅ Bullet Chart sync + labels
+  /* ✅ Bullet Chart sync */
   const resPct = Math.min(sumResult,100);
   const tarPct = Math.min(sumTarget,100);
 
@@ -233,13 +265,12 @@ function render(){
   bulletResult.textContent = sumResult.toFixed(1) + "%";
 
   bulletTarget.style.left = tarPct + "%";
-  bulletTargetLabel.style.left = tarPct + "%";
   bulletTargetLabel.textContent = sumTarget.toFixed(1) + "%";
 }
 
 rfSel.onchange = render;
 qSel.onchange  = render;
 </script>
+
 </body>
 </html>
-``
