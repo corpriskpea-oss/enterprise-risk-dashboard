@@ -1,142 +1,353 @@
-/* ===== A) Global ===== */
-* { box-sizing: border-box; }
+/* =====================================================
+   STEP 1 — UX BASELINE (Global Design Tokens + Layout)
+   ใช้ทั้งเว็บ แก้ครั้งเดียว
+   ===================================================== */
+
+/* ===== A) Design Tokens ===== */
+:root {
+  --bg-page: #f4f7fb;
+  --bg-card: #ffffff;
+  --bg-soft: #eef4ff;
+
+  --primary: #2563eb;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --gray: #6b7280;
+
+  --text-main: #111827;
+  --text-muted: #6b7280;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.04);
+  --shadow-md: 0 8px 24px rgba(0,0,0,.06);
+
+  --space-xs: 6px;
+  --space-sm: 12px;
+  --space-md: 20px;
+  --space-lg: 32px;
+}
+
+/* ===== B) Global Reset ===== */
+* {
+  box-sizing: border-box;
+}
+
 body {
-  margin:0;
+  margin: 0;
   font-family: Arial, "Segoe UI", sans-serif;
-  background:#f3f4f6;
-  color:#111827;
+  background: var(--bg-page);
+  color: var(--text-main);
 }
 
-/* ===== Layout ===== */
-.layout { display:flex; height:100vh; }
+/* =====================================================
+   Layout
+   ===================================================== */
+
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== Sidebar ===== */
+/* =====================================================
+   SIDEBAR UX (Narrow + PayTrack Style)
+   ===================================================== */
+/* =====================================================
+   SIDEBAR UX – FINAL VERSION
+   Narrow / Clean / PayTrack Style
+   ===================================================== */
+
 .sidebar {
-  width:240px;
-  background:#0f172a;
-  color:white;
-  padding:16px;
+  width: 200px;                 /* แคบ */
+  background: linear-gradient(
+    180deg,
+    #0f172a 0%,
+    #020617 100%
+  );
+  color: #e5e7eb;
+  padding: 18px 12px;
 }
+
+/* Sidebar title */
 .sidebar h3 {
-  margin:0 0 16px 0;
-  font-size:18px;
+  margin: 0 0 24px 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
 }
+
+/* Menu button */
 .sidebar button {
-  width:100%;
-  padding:10px;
-  margin-bottom:8px;
-  background:none;
-  border:none;
-  color:white;
-  text-align:left;
-  border-radius:4px;
-  cursor:pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+
+  background: transparent;
+  border: none;
+  border-radius: 14px;
+
+  color: #e5e7eb;
+  text-align: left;
+  font-size: 15px;
+  cursor: pointer;
+
+  transition: background .15s ease, color .15s ease;
 }
-.sidebar button:hover,
+
+/* Hover */
+.sidebar button:hover {
+  background: #1e293b;
+}
+
+/* Active (pill สีฟ้าแบบในรูป) */
 .sidebar button.active {
-  background:#334155;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
 }
 
-/* Content */
+
+/* ===== Main Content ===== */
 .content {
-  flex:1;
-  background:#f3f4f6;
+  flex: 1;
+  background: var(--bg-page);
+  padding: var(--space-lg);
+  overflow-y: auto;
 }
+
+/* iframe pages */
 iframe {
-  width:100%;
-  height:100%;
-  border:none;
-  background:white;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--bg-page);
 }
 
-/* ===== Section spacing ===== */
-.section { margin-bottom:28px; }
+/* =====================================================
+   Page Structure
+   ===================================================== */
 
-/* ===== B) Cards ===== */
-.cards {
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-  gap:14px;
-  margin-bottom:26px;
+.section {
+  margin-bottom: var(--space-lg);
 }
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* =====================================================
+   Cards (Core UX Component)
+   ===================================================== */
+
 .card {
-  padding:14px 16px;
-  border-radius:8px;
-  color:white;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-md);
 }
+
+.card-header {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+}
+
+.card-muted {
+  background: var(--bg-soft);
+}
+
+/* =====================================================
+   KPI / Summary Cards
+   ===================================================== */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
 .card b {
-  display:block;
-  font-size:13px;
-  margin-bottom:4px;
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+  font-weight: 600;
 }
+
 .card .value {
-  font-size:20px;
-  font-weight:600;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .2px;
 }
-.card.green{background:#16a34a;}
-.card.red{background:#dc2626;}
-.card.blue{background:#2563eb;}
-.card.gray{background:#6b7280;}
 
-/* ===== C) Bullet Chart ===== */
-.bullet-box { margin:20px 0 30px 0; }
-.bullet-title { font-weight:600; font-size:14px; margin-bottom:6px; }
+/* KPI Color Presets */
+.card.green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.card.red {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.card.blue {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.card.gray {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* =====================================================
+   Status / Risk Badge
+   ===================================================== */
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* =====================================================
+   Bullet Chart
+   ===================================================== */
+
+.bullet-box {
+  margin: 24px 0 32px 0;
+}
+
+.bullet-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
 .bullet-bg {
-  position:relative;
-  height:26px;
-  background:#e5e7eb;
-  border-radius:6px;
-}
-.bullet-result {
-  position:absolute;
-  height:100%;
-  background:#2563eb;
-  border-radius:6px 0 0 6px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  padding-right:6px;
-  color:white;
-  font-size:12px;
-  font-weight:600;
-}
-.bullet-target {
-  position:absolute;
-  top:-6px;
-  width:3px;
-  height:38px;
-  background:#111827;
-}
-.bullet-target-label {
-  position:absolute;
-  top:-22px;
-  transform:translateX(-50%);
-  font-size:12px;
-  font-weight:600;
-}
-.bullet-label {
-  display:flex;
-  justify-content:space-between;
-  font-size:12px;
-  color:#374151;
-  margin-top:4px;
+  position: relative;
+  height: 26px;
+  background: #e5e7eb;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
-/* ===== D) Table ===== */
+.bullet-result {
+  position: absolute;
+  height: 100%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bullet-target {
+  position: absolute;
+  top: -6px;
+  width: 3px;
+  height: 38px;
+  background: #111827;
+}
+
+.bullet-target-label {
+  position: absolute;
+  top: -22px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bullet-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #374151;
+  margin-top: 6px;
+}
+
+/* =====================================================
+   Table
+   ===================================================== */
+
 table {
-  width:100%;
-  border-collapse:collapse;
-  font-size:13px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
+
 th {
-  background:#e5e7eb;
-  font-weight:600;
-  padding:8px;
-  border:1px solid #d1d5db;
-  text-align:left;
+  background: #f1f5f9;
+  font-weight: 600;
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
 }
+
 td {
-  padding:8px;
-  border:1px solid #e5e7eb;
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
 }
-td.good { background:#dcfce7; font-weight:600; }
-td.bad  { background:#fee2e2; font-weight:600; }
-tbody tr:hover { background:#f9fafb; }
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+td.good {
+  background: #dcfce7;
+  font-weight: 600;
+}
+
+td.bad {
+  background: #fee2e2;
+  font-weight: 600;
+}
