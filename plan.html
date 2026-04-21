@@ -2,9 +2,10 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v1.0.2 (Plan)</title>
+<title>Enterprise Risk Dashboard – v1.0.3 (Plan)</title>
 
 <link rel="stylesheet" href="styles.css">
+
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -16,20 +17,45 @@
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-  body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
-  .layout { display:flex; min-height:100vh; }
-  
-  .content { flex:1; padding:24px; background:white; }
+body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+.layout { display:flex; min-height:100vh; }
+.content { flex:1; padding:24px; background:white; }
 
-  table { width:100%; border-collapse:collapse; margin-top:12px; }
-  th, td { border:1px solid #ddd; padding:8px; vertical-align:top; }
-  th { background:#e5e7eb; text-align:center; }
+.toolbar { margin-bottom:12px; }
 
-  select, button {
-    padding:6px 10px; margin-right:8px;
-  }
+.cards {
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:12px;
+  margin-bottom:16px;
+}
+.card {
+  padding:16px;
+  border-radius:8px;
+  color:white;
+}
+.card h3 {
+  margin:0;
+  font-size:22px;
+}
+.card p {
+  margin:4px 0 0;
+  font-size:14px;
+}
 
-  .toolbar { margin-bottom:12px; }
+.bg-blue  { background:#2563eb; }
+.bg-yellow{ background:#ca8a04; }
+.bg-purple{ background:#7c3aed; }
+.bg-green { background:#16a34a; }
+
+table { width:100%; border-collapse:collapse; margin-top:12px; }
+th, td { border:1px solid #ddd; padding:8px; vertical-align:top; }
+th { background:#e5e7eb; text-align:center; }
+
+select, button {
+  padding:6px 10px;
+  margin-right:8px;
+}
 </style>
 </head>
 
@@ -38,7 +64,7 @@
 
 <script type="text/babel">
 
-/* ==================== Data Hook ==================== */
+/* ==================== Plan Data ==================== */
 function usePlanData() {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -51,10 +77,7 @@ function usePlanData() {
     fetch(url)
       .then(res => res.text())
       .then(csv => {
-        const parsed = Papa.parse(csv, {
-          header: true,
-          skipEmptyLines: true,
-        });
+        const parsed = Papa.parse(csv, { header:true, skipEmptyLines:true });
         setRows(parsed.data);
         setLoading(false);
       });
@@ -63,13 +86,44 @@ function usePlanData() {
   return { rows, loading };
 }
 
+/* ==================== Status_Combined Data ==================== */
+function useStatusData() {
+  const [rows, setRows] = React.useState([]);
+
+  React.useEffect(() => {
+    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
+    const url =
+      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Status_Combined`;
+
+    fetch(url)
+      .then(res => res.text())
+      .then(csv => {
+        const parsed = Papa.parse(csv, { header:true, skipEmptyLines:true });
+        setRows(parsed.data);
+      });
+  }, []);
+
+  return rows;
+}
+
 /* ==================== App ==================== */
 function App() {
   const { rows, loading } = usePlanData();
+  const statusRows = useStatusData();
 
   const [rfFilter, setRfFilter] = React.useState("ALL");
   const [selectedPlan, setSelectedPlan] = React.useState(null);
   const [quarter, setQuarter] = React.useState("Q1");
+
+  /* ---------- Status Summary ---------- */
+  const statusSummary = React.useMemo(() => {
+    const total = statusRows.length;
+    const lv1 = statusRows.filter(r => r.Status_Combined === "รอยืนยันข้อมูล | ระดับที่ 1").length;
+    const lv3 = statusRows.filter(r => r.Status_Combined === "รอยืนยันข้อมูล | ระดับที่ 3").length;
+    const done = statusRows.filter(r => r.Status_Combined === "ยืนยันข้อมูลแล้ว").length;
+
+    return { total, lv1, lv3, done };
+  }, [statusRows]);
 
   /* ---------- RF list ---------- */
   const rfList = React.useMemo(() => {
@@ -88,22 +142,40 @@ function App() {
     return map;
   }, [rows, rfFilter]);
 
-  /* ---------- Quarter field names ---------- */
   const detailKey = `${quarter}_Detail`;
   const problemKey = `${quarter}_Problem`;
   const solutionKey = `${quarter}_Solution`;
 
   return (
     <div className="layout">
-      
       <div className="content">
+
         <h2>Plan Report</h2>
+
+        {/* ===== Status Cards ===== */}
+        <div className="cards">
+          <div className="card bg-blue">
+            <h3>{statusSummary.total}</h3>
+            <p>จำนวนแผนทั้งหมด</p>
+          </div>
+          <div className="card bg-yellow">
+            <h3>{statusSummary.lv1}</h3>
+            <p>รอยืนยันข้อมูล | ระดับที่ 1</p>
+          </div>
+          <div className="card bg-purple">
+            <h3>{statusSummary.lv3}</h3>
+            <p>รอยืนยันข้อมูล | ระดับที่ 3</p>
+          </div>
+          <div className="card bg-green">
+            <h3>{statusSummary.done}</h3>
+            <p>ยืนยันข้อมูลแล้ว</p>
+          </div>
+        </div>
 
         {loading && <p>กำลังโหลดข้อมูล…</p>}
 
         {!loading && !selectedPlan && (
           <>
-            {/* ---------- RF Filter ---------- */}
             <div className="toolbar">
               <label>RF Group: </label>
               <select
@@ -116,7 +188,6 @@ function App() {
               </select>
             </div>
 
-            {/* ---------- Plan Summary Table ---------- */}
             <table>
               <thead>
                 <tr>
@@ -147,29 +218,25 @@ function App() {
           </>
         )}
 
-        {/* ==================== Drill-down ==================== */}
+        {/* ===== Drill-down ===== */}
         {selectedPlan && (
           <>
             <button onClick={() => setSelectedPlan(null)}>← กลับ</button>
             <h3>{selectedPlan.name}</h3>
 
-            {/* Quarter Filter */}
             <div className="toolbar">
               <label>ไตรมาส: </label>
               {["Q1","Q2","Q3","Q4"].map(q => (
                 <button
                   key={q}
                   onClick={() => setQuarter(q)}
-                  style={{
-                    fontWeight: quarter === q ? "bold" : "normal"
-                  }}
+                  style={{ fontWeight: quarter === q ? "bold" : "normal" }}
                 >
                   {q}
                 </button>
               ))}
             </div>
 
-            {/* Activity Table */}
             <table>
               <thead>
                 <tr>
@@ -194,13 +261,13 @@ function App() {
             </table>
           </>
         )}
+
       </div>
     </div>
   );
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-
 </script>
 </body>
 </html>
