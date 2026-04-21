@@ -1,43 +1,51 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<title>Enterprise Risk Dashboard – v.final.1.00</title>
-
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>Enterprise Risk Dashboard – v.final.1.00</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 <div class="layout">
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <h3>Enterprise Risk</h3>
+  <!-- ================= Sidebar ================= -->
+<aside class="sidebar">
+  <h3>Enterprise Risk</h3>
 
-    <button class="active" onclick="loadPage('plan.html', this)">
-      Plan
-    </button>
+<button class="active" onclick="loadPage('plan.html', this)">
+  📋 Plan
+</button>
 
-    <button onclick="loadPage('kri.html', this)">
-      KRI
-    </button>
+<button onclick="loadPage('kri.html', this)">
+  📊 KRI
+</button>
 
-    <button onclick="loadPage('matrix.html', this)">
-      Risk Matrix
-    </button>
+<button onclick="loadPage('matrix.html', this)">
+  🟦 Risk Matrix
+</button>
 
-    <button onclick="loadPage('risk-response.html', this)">
-      Risk Response
-    </button>
-  </aside>
+<button onclick="loadPage('risk-response.html', this)">
+  🔁 Risk Response
+</button>
 
-  <!-- Content -->
-  <main class="content">
-    <iframe id="mainFrame" src="plan.html"></iframe>
+</aside>
+
+  <!-- ================= Main Content ================= -->
+  <main class="content" style="display:flex; flex-direction:column;">
+
+    <!-- Iframe Area -->
+    <iframe
+      id="mainFrame"
+      src="plan.html"
+      style="flex:1; border-radius:12px;"
+    ></iframe>
+
   </main>
 
 </div>
 
+<!-- ================= Script ================= -->
 <script>
 function loadPage(page, btn){
   document.getElementById("mainFrame").src = page;
@@ -51,4 +59,3 @@ function loadPage(page, btn){
 
 </body>
 </html>
-``
