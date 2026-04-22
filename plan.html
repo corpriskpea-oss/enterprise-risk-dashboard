@@ -207,7 +207,50 @@ function App() {
               </select>
             </div>
 
-            {/* ตารางคงเดิม */}
+            <table>
+  <thead>
+    <tr>
+      <th>แผนงาน</th>
+      <th>RF</th>
+      <th>ผลการดำเนินงาน (%)</th>
+      <th>เป้าหมาย</th>
+      <th>สถานะ</th>
+    </tr>
+  </thead>
+  <tbody>
+    {Object.entries(planGroups)
+      .sort((a, b) => {
+        const aThai = /[ก-ฮ]/.test(a[0]);
+        const bThai = /[ก-ฮ]/.test(b[0]);
+
+        // อังกฤษ/ตัวเลข มาก่อน ไทย
+        if (aThai && !bThai) return 1;
+        if (!aThai && bThai) return -1;
+
+        // กลุ่มเดียวกัน → เรียงตามภาษา
+        if (!aThai && !bThai) {
+          return a[0].localeCompare(b[0], "en", { numeric: true });
+        }
+        return a[0].localeCompare(b[0], "th");
+      })
+      .map(([planName, items]) => {
+        const p = items[0];
+        return (
+          <tr
+            key={planName}
+            style={{ cursor: "pointer" }}
+            onClick={() => setSelectedPlan({ name: planName, items })}
+          >
+            <td>{planName}</td>
+            <td align="center">{p.RF_GroupName}</td>
+            <td align="center">{p.ResultPercent}</td>
+            <td align="center">{p.TargetLevel5}</td>
+            <td>{p.Status_Combined}</td>
+          </tr>
+        );
+      })}
+  </tbody>
+</table>
           </>
         )}
 
