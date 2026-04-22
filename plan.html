@@ -219,40 +219,42 @@ function App() {
   </thead>
 
   <tbody>
-    {Object.entries(planGroups)
-      .sort((a, b) => {
-        const aThai = /[ก-ฮ]/.test(a[0]);
-        const bThai = /[ก-ฮ]/.test(b[0]);
+  {Object.entries(planGroups)
+    .sort((a, b) => {
+      const nameA = a[0].trim();
+      const nameB = b[0].trim();
 
-        // อังกฤษ/ตัวเลข มาก่อน ไทย
-        if (aThai && !bThai) return 1;
-        if (!aThai && bThai) return -1;
+      const aIsEng = /^[A-Za-z0-9]/.test(nameA);
+      const bIsEng = /^[A-Za-z0-9]/.test(nameB);
 
-        // กลุ่มเดียวกัน → เรียงตามภาษา
-        if (!aThai && !bThai) {
-          return a[0].localeCompare(b[0], "en", { numeric: true });
-        }
-        return a[0].localeCompare(b[0], "th");
-      })
-      .map(([planName, items]) => {
-        const p = items[0];
-        return (
-          <tr
-            key={planName}
-            style={{ cursor: "pointer" }}
-            onClick={() =>
-              setSelectedPlan({ name: planName, items })
-            }
-          >
-            <td>{planName}</td>
-            <td align="center">{p.RF_GroupName}</td>
-            <td align="center">{p.ResultPercent}</td>
-            <td align="center">{p.TargetLevel5}</td>
-            <td>{p.Status_Combined}</td>
-          </tr>
-        );
-      })}
-  </tbody>
+      // ✅ อังกฤษ / ตัวเลข มาก่อน ไทย
+      if (aIsEng && !bIsEng) return -1;
+      if (!aIsEng && bIsEng) return 1;
+
+      // ✅ กลุ่มเดียวกัน → เรียงตามภาษา
+      if (aIsEng && bIsEng) {
+        return nameA.localeCompare(nameB, "en", { numeric: true });
+      }
+      return nameA.localeCompare(nameB, "th");
+    })
+    .map(([planName, items]) => {
+      const p = items[0];
+      return (
+        <tr
+          key={planName}
+          style={{ cursor: "pointer" }}
+          onClick={() => setSelectedPlan({ name: planName, items })}
+        >
+          <td>{planName}</td>
+          <td align="center">{p.RF_GroupName}</td>
+          <td align="center">{p.ResultPercent}</td>
+          <td align="center">{p.TargetLevel5}</td>
+          <td>{p.Status_Combined}</td>
+        </tr>
+      );
+    })}
+</tbody>
+``
 </table>
 
           </>
