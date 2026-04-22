@@ -217,6 +217,7 @@ function App() {
       <th>สถานะ</th>
     </tr>
   </thead>
+
   <tbody>
     {Object.entries(planGroups)
       .sort((a, b) => {
@@ -239,7 +240,9 @@ function App() {
           <tr
             key={planName}
             style={{ cursor: "pointer" }}
-            onClick={() => setSelectedPlan({ name: planName, items })}
+            onClick={() =>
+              setSelectedPlan({ name: planName, items })
+            }
           >
             <td>{planName}</td>
             <td align="center">{p.RF_GroupName}</td>
@@ -251,6 +254,7 @@ function App() {
       })}
   </tbody>
 </table>
+
           </>
         )}
 
