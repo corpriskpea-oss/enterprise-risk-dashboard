@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v1.0.5 (Plan)</title>
+<title>Enterprise Risk Dashboard – v1.0.4 (Plan)</title>
 
 <link rel="stylesheet" href="styles.css">
 
@@ -17,19 +17,36 @@
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-/* ===== buttons ===== */
-.btn-filter {
-  background:#60a5fa;          /* น้ำเงินอ่อน */
+body { margin:0; font-family:Arial,sans-serif; background:#f3f4f6; }
+.layout { display:flex; min-height:100vh; }
+.content { flex:1; padding:24px; background:white; }
+
+.toolbar { margin-bottom:12px; }
+
+.cards {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:16px;
+}
+.card {
+  padding:16px;
+  border-radius:8px;
   color:white;
-  border:none;
-  padding:6px 14px;
-  border-radius:6px;
-  cursor:pointer;
-  font-weight:500;
 }
-.btn-filter.active {
-  background:#2563eb;          /* น้ำเงินเข้ม */
-}
+.card h3 { margin:0; font-size:22px; }
+.card p { margin-top:4px; font-size:14px; }
+
+.bg-blue   { background:#2563eb; }
+.bg-yellow { background:#ca8a04; }
+.bg-purple { background:#7c3aed; }
+.bg-green  { background:#16a34a; }
+
+table { width:100%; border-collapse:collapse; margin-top:12px; }
+th, td { border:1px solid #ddd; padding:8px; }
+th { background:#e5e7eb; text-align:center; }
+
+select, button { padding:6px 10px; margin-right:8px; }
 </style>
 </head>
 
@@ -60,7 +77,7 @@ function usePlanData() {
   return { rows, loading };
 }
 
-/* ==================== Status Data ==================== */
+/* ==================== Status_Combined Data ==================== */
 function useStatusData() {
   const [rows, setRows] = React.useState([]);
 
@@ -86,36 +103,50 @@ function App() {
   const statusRows = useStatusData();
 
   const [rfFilter, setRfFilter] = React.useState("ALL");
-  const [riskType, setRiskType] = React.useState("ALL");   // ✅ NEW
   const [selectedPlan, setSelectedPlan] = React.useState(null);
   const [quarter, setQuarter] = React.useState("Q1");
+
+  /* ===== ✅ Status Summary (DEDUP by PlanName) ===== */
+  const statusSummary = React.useMemo(() => {
+    const planMap = new Map();
+
+    statusRows.forEach(r => {
+      if (r.PlanName && !planMap.has(r.PlanName)) {
+        planMap.set(r.PlanName, r);   // ✅ 1 แผน = 1 แถว
+      }
+    });
+
+    const uniquePlans = Array.from(planMap.values());
+
+    return {
+      total: uniquePlans.length,
+      lv1: uniquePlans.filter(p =>
+        p.Status_Combined === "รอยืนยันข้อมูล | ระดับที่ 1"
+      ).length,
+      lv3: uniquePlans.filter(p =>
+        p.Status_Combined === "รอยืนยันข้อมูล | ระดับที่ 3"
+      ).length,
+      done: uniquePlans.filter(p =>
+        p.Status_Combined === "ยืนยันข้อมูลแล้ว"
+      ).length
+    };
+  }, [statusRows]);
 
   /* ---------- RF list ---------- */
   const rfList = React.useMemo(() => {
     return ["ALL", ...new Set(rows.map(r => r.RF_GroupName))];
   }, [rows]);
 
-  const orgRF = ["RF1","RF2","RF3","RF4","RF5","RF6"];
-
-  /* ---------- Group by Plan (FILTERED) ---------- */
+  /* ---------- Group by Plan ---------- */
   const planGroups = React.useMemo(() => {
     const map = {};
-
     rows.forEach(r => {
-
-      /* RF dropdown */
       if (rfFilter !== "ALL" && r.RF_GroupName !== rfFilter) return;
-
-      /* ✅ ความเสี่ยงองค์กร / สายงาน */
-      if (riskType === "ORG" && !orgRF.includes(r.RF_GroupName)) return;
-      if (riskType === "LINE" && orgRF.includes(r.RF_GroupName)) return;
-
       if (!map[r.PlanName]) map[r.PlanName] = [];
       map[r.PlanName].push(r);
     });
-
     return map;
-  }, [rows, rfFilter, riskType]);
+  }, [rows, rfFilter]);
 
   const detailKey = `${quarter}_Detail`;
   const problemKey = `${quarter}_Problem`;
@@ -127,33 +158,37 @@ function App() {
 
         <h2>Plan Report</h2>
 
+        {/* ===== Status Cards ===== */}
+        <div className="cards">
+          <div className="card bg-blue">
+            <h3>{statusSummary.total}</h3>
+            <p>จำนวนแผนทั้งหมด</p>
+          </div>
+          <div className="card bg-yellow">
+            <h3>{statusSummary.lv1}</h3>
+            <p>รอยืนยันข้อมูล | ระดับที่ 1</p>
+          </div>
+          <div className="card bg-purple">
+            <h3>{statusSummary.lv3}</h3>
+            <p>รอยืนยันข้อมูล | ระดับที่ 3</p>
+          </div>
+          <div className="card bg-green">
+            <h3>{statusSummary.done}</h3>
+            <p>ยืนยันข้อมูลแล้ว</p>
+          </div>
+        </div>
+
+        {loading && <p>กำลังโหลดข้อมูล…</p>}
+
         {!loading && !selectedPlan && (
           <>
             <div className="toolbar">
-
               <label>RF Group: </label>
-              <select value={rfFilter}
-                      onChange={e => setRfFilter(e.target.value)}>
+              <select value={rfFilter} onChange={e => setRfFilter(e.target.value)}>
                 {rfList.map(rf => (
                   <option key={rf} value={rf}>{rf}</option>
                 ))}
               </select>
-
-              {/* ✅ NEW BUTTONS */}
-              <button
-                className={`btn-filter ${riskType==="ORG"?"active":""}`}
-                onClick={() => setRiskType("ORG")}
-              >
-                ความเสี่ยงองค์กร
-              </button>
-
-              <button
-                className={`btn-filter ${riskType==="LINE"?"active":""}`}
-                onClick={() => setRiskType("LINE")}
-              >
-                ความเสี่ยงสายงาน
-              </button>
-
             </div>
 
             <table>
@@ -171,8 +206,8 @@ function App() {
                   const p = items[0];
                   return (
                     <tr key={planName}
-                        style={{cursor:"pointer"}}
-                        onClick={() => setSelectedPlan({name:planName,items})}>
+                        style={{ cursor:"pointer" }}
+                        onClick={() => setSelectedPlan({ name: planName, items })}>
                       <td>{planName}</td>
                       <td align="center">{p.RF_GroupName}</td>
                       <td align="center">{p.ResultPercent}</td>
@@ -181,6 +216,50 @@ function App() {
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* ===== Drill-down ===== */}
+        {selectedPlan && (
+          <>
+            <button onClick={() => setSelectedPlan(null)}>← กลับ</button>
+            <h3>{selectedPlan.name}</h3>
+
+            <div className="toolbar">
+              <label>ไตรมาส: </label>
+              {["Q1","Q2","Q3","Q4"].map(q => (
+                <button
+                  key={q}
+                  onClick={() => setQuarter(q)}
+                  style={{ fontWeight: quarter === q ? "bold" : "normal" }}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>ลำดับ</th>
+                  <th>กิจกรรม</th>
+                  <th>รายละเอียด</th>
+                  <th>ปัญหา / อุปสรรค</th>
+                  <th>แนวทางการแก้ไข</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedPlan.items.map((a,i) => (
+                  <tr key={i}>
+                    <td align="center">{a.ActivityOrder}</td>
+                    <td>{a.ActivityName}</td>
+                    <td>{a[detailKey]}</td>
+                    <td>{a[problemKey]}</td>
+                    <td>{a[solutionKey]}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </>
@@ -195,3 +274,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
+``
