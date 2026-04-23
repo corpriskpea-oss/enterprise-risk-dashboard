@@ -61,8 +61,9 @@ function usePlanData() {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const sheetUrl ="https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=0";
-
+    const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
+    const url =
+      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
 
     fetch(url)
       .then(r => r.text())
