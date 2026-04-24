@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Enterprise Risk Dashboard – v3.03.2 (Matrix)</title>
+<title>Enterprise Risk Dashboard – v3.03.3 (Matrix)</title>
 
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -15,19 +15,32 @@ body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; }
 .matrix-title { margin:10px 0; font-weight:bold; }
 
 .cards { display:flex; gap:12px; margin:12px 0; }
-.card { flex:1; padding:12px; border-radius:8px; border:1px solid #e5e7eb; }
-.card.gray { background:#e5e7eb; }
+.card {
+  flex:1; padding:12px; border-radius:8px;
+  border:1px solid #e5e7eb;
+}
+.card b { display:block; margin-bottom:6px; }
+.card.gray { background:#e5e7eb; color:#374151; }
 .card.low { background:#43a047; color:#fff; }
 .card.medium { background:#fdd835; }
 .card.high { background:#e53935; color:#fff; }
-.card b { display:block; }
 
 .matrix-wrapper { position:relative; max-width:900px; }
-.matrix { display:grid; grid-template-columns:repeat(5,1fr); gap:2px; }
-.cell { height:90px; display:flex; align-items:center; justify-content:center; font-weight:bold; }
-.low { background:#43a047; color:#fff; }
+.matrix {
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:2px;
+}
+.cell {
+  height:90px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+}
+.low { background:#43a047; color:white; }
 .medium { background:#fdd835; }
-.high { background:#e53935; color:#fff; }
+.high { background:#e53935; color:white; }
 
 .point { position:absolute; transform:translate(-50%,-50%); z-index:3; }
 .circle { width:22px; height:22px; background:black; border-radius:50%; }
@@ -39,9 +52,20 @@ body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; }
 }
 .star { font-size:26px; color:#8e24aa; }
 
-svg { position:absolute; inset:0; pointer-events:none; z-index:2; }
+svg {
+  position:absolute; inset:0;
+  pointer-events:none;
+  z-index:2;
+}
 
-.axis-box { margin-top:14px; padding:12px; background:#fff; border-left:6px solid #1976d2; }
+.legend { margin-top:10px; font-size:14px; }
+
+.axis-box {
+  margin-top:14px; padding:12px;
+  background:#fff; border-left:6px solid #1976d2;
+  font-size:14px; line-height:1.6;
+}
+.axis-box b { color:#0d47a1; }
 </style>
 </head>
 
@@ -64,22 +88,36 @@ Quarter:
 </div>
 
 <div class="cards">
-  <div id="cardL" class="card gray"><b>Likelihood</b><span>-</span></div>
-  <div id="cardI" class="card gray"><b>Impact</b><span>-</span></div>
-  <div id="cardS" class="card gray"><b>Risk Score</b><span>-</span></div>
+  <div id="cardL" class="card gray">
+    <b>Likelihood</b><span>-</span>
+  </div>
+  <div id="cardI" class="card gray">
+    <b>Impact</b><span>-</span>
+  </div>
+  <div id="cardS" class="card gray">
+    <b>Risk Score (L×I)</b><span>-</span>
+  </div>
 </div>
 
 <div id="title" class="matrix-title"></div>
 
 <div class="matrix-wrapper">
 <svg id="svg">
-<defs>
-<marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto">
-<polygon points="0,0 10,5 0,10" fill="#8e24aa"/>
-</marker>
-</defs>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10"
+      refX="10" refY="5" orient="auto">
+      <polygon points="0,0 10,5 0,10" fill="#8e24aa"/>
+    </marker>
+  </defs>
 </svg>
 <div id="matrix" class="matrix"></div>
+</div>
+
+<!-- ✅ LEGEND (ใส่กลับ) -->
+<div class="legend">
+● ดำ = Pre‑Management &nbsp;
+▲ ฟ้า = Post‑Management &nbsp;
+★ ม่วง = L‑Qx × I‑Qx
 </div>
 
 <div id="axisInfo" class="axis-box"></div>
@@ -88,13 +126,15 @@ Quarter:
 </div>
 
 <script>
-/* ========= Axis Meaning ========= */
+/* ================= Axis Meaning ================= */
 const axisMeaning = {
-  "ย":{ likelihood:"ความสำเร็จของแผนตอบสนองปัจจัยเสี่ยง",
-        impact:"ขยายผลการใช้งาน AI ทั่วประเทศ"}
+  "ย":{
+    likelihood:"ความสำเร็จของแผนตอบสนองปัจจัยเสี่ยง",
+    impact:"ขยายผลการใช้งาน AI ทั่วประเทศ"
+  }
 };
 
-/* ========= Config ========= */
+/* ================= Config ================= */
 const sheetUrl =
 "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=523652456";
 
@@ -105,15 +145,22 @@ const qSel = document.getElementById("q");
 const title = document.getElementById("title");
 const axisBox = document.getElementById("axisInfo");
 
+const cardL = document.getElementById("cardL");
+const cardI = document.getElementById("cardI");
+const cardS = document.getElementById("cardS");
+
 const clamp = v => Math.min(5, Math.max(1, v));
 const riskLevel = s => s <= 4 ? "low" : s <= 14 ? "medium" : "high";
 const isNum = v => Number.isFinite(v);
 
-const pos = (L,I)=>({x:(clamp(L)-.5)*20,y:(5-clamp(I)+.5)*20});
+const pos = (L,I)=>({
+  x:(clamp(L)-.5)*20,
+  y:(5-clamp(I)+.5)*20
+});
 
 let data=[];
 
-/* ========= Load ========= */
+/* ================= Load Data ================= */
 Papa.parse(sheetUrl,{
   download:true,
   header:true,
@@ -138,27 +185,58 @@ Papa.parse(sheetUrl,{
   }
 });
 
-/* ========= Draw ========= */
+/* ================= Matrix Base ================= */
 function drawMatrix(){
   matrix.innerHTML="";
   svg.innerHTML = svg.innerHTML.split("</defs>")[0]+"</defs>";
-  for(let y=5;y>=1;y--)for(let x=1;x<=5;x++){
-    const c=document.createElement("div");
-    c.className="cell "+riskLevel(x*y);
-    c.textContent=x*y;
-    matrix.appendChild(c);
+
+  for(let y=5;y>=1;y--){
+    for(let x=1;x<=5;x++){
+      const c=document.createElement("div");
+      c.className="cell "+riskLevel(x*y);
+      c.textContent=x*y;
+      matrix.appendChild(c);
+    }
   }
 }
 
+/* ================= Cards ================= */
+function updateCards(d, q){
+  if(!d || !isNum(d[q]?.L) || !isNum(d[q]?.I)){
+    [cardL,cardI,cardS].forEach(c=>{
+      c.className="card gray";
+      c.querySelector("span").textContent="-";
+    });
+    return;
+  }
+
+  const L = d[q].L;
+  const I = d[q].I;
+  const S = L * I;
+  const lvl = riskLevel(S);
+
+  cardL.className="card "+lvl;
+  cardL.querySelector("span").textContent=L;
+
+  cardI.className="card "+lvl;
+  cardI.querySelector("span").textContent=I;
+
+  cardS.className="card "+lvl;
+  cardS.querySelector("span").textContent=S;
+}
+
+/* ================= Render ================= */
 function render(){
   drawMatrix();
+
   const rf = rfSel.value;
   const q = qSel.value;
-  title.textContent = `${q}/2569 | ${rf}`;
 
-  if(!axisMeaning[rf]) {
+  title.textContent = `${q}/2569 | ${rf==="ALL"?"ALL RF":rf}`;
+
+  if(!axisMeaning[rf]){
     axisBox.innerHTML =
-      "<b>Likelihood:</b> ความสำเร็จการบริหารความเสี่ยง<br>"+
+      "<b>Likelihood:</b> ความสำเร็จของการบริหารความเสี่ยง<br>"+
       "<b>Impact:</b> ผลกระทบต่อเป้าหมายองค์กร";
   } else {
     axisBox.innerHTML =
@@ -166,22 +244,33 @@ function render(){
       `<b>Impact:</b> ${axisMeaning[rf].impact}`;
   }
 
-  data
-    .filter(d => rf==="ALL" || d.rf===rf)
-    .forEach((d,i)=>{
-      if(isNum(d.pre.L) && isNum(d.pre.I))
-        plot(d.pre.L,d.pre.I,'<div class="circle"></div>',i*4);
+  const filtered = data.filter(d=>rf==="ALL"||d.rf===rf);
+  if(filtered.length) updateCards(filtered[0], q);
 
-      if(isNum(d.post.L) && isNum(d.post.I))
-        plot(d.post.L,d.post.I,'<div class="triangle"></div>',i*4+6);
+  filtered.forEach((d,i)=>{
 
-      if(isNum(d[q]?.L) && isNum(d[q]?.I)){
-        drawArrow(pos(d.pre.L,d.pre.I),pos(d[q].L,d[q].I));
-        plot(d[q].L,d[q].I,'<div class="star">★</div>',i*4+14);
-      }
-    });
+    // ● Pre
+    if(isNum(d.pre.L)&&isNum(d.pre.I)){
+      plot(d.pre.L,d.pre.I,'<div class="circle"></div>',i*4);
+    }
+
+    // ▲ Post
+    if(isNum(d.post.L)&&isNum(d.post.I)){
+      plot(d.post.L,d.post.I,'<div class="triangle"></div>',i*4+6);
+    }
+
+    // ★ Quarter + Arrow (Pre → Quarter)
+    if(isNum(d[q]?.L)&&isNum(d[q]?.I)){
+      plot(d[q].L,d[q].I,'<div class="star">★</div>',i*4+14);
+      drawArrow(
+        pos(d.pre.L,d.pre.I),
+        pos(d[q].L,d[q].I)
+      );
+    }
+  });
 }
 
+/* ================= Helpers ================= */
 function drawArrow(a,b){
   const l=document.createElementNS("http://www.w3.org/2000/svg","line");
   l.setAttribute("x1",a.x+"%");
