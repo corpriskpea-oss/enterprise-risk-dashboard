@@ -5,24 +5,18 @@
 <title>Enterprise Risk Dashboard – v3.03.2 (Matrix)</title>
 
 <link rel="stylesheet" href="styles.css">
-<!-- PapaParse -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
 body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; }
 .layout { display:flex; min-height:100vh; }
-
 .content { flex:1; padding:24px; background:white; }
 
 .controls select { padding:6px; margin-right:10px; }
 .matrix-title { margin:10px 0; font-weight:bold; }
 
-/* ===== Cards ===== */
 .cards { display:flex; gap:12px; margin:12px 0; }
-.card {
-  flex:1; padding:12px; border-radius:8px;
-  font-size:14px; border:1px solid #e5e7eb;
-}
+.card { flex:1; padding:12px; border-radius:8px; font-size:14px; border:1px solid #e5e7eb; }
 .card b { display:block; margin-bottom:6px; }
 .card.gray { background:#e5e7eb; color:#374151; }
 .card.low { background:#43a047; color:white; }
@@ -30,16 +24,9 @@ body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; }
 .card.high { background:#e53935; color:white; }
 
 .matrix-wrapper { position:relative; max-width:900px; }
-.matrix {
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:2px;
-}
+.matrix { display:grid; grid-template-columns:repeat(5,1fr); gap:2px; }
 .cell {
-  height:90px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  height:90px; display:flex; align-items:center; justify-content:center;
   font-weight:bold;
 }
 .low { background:#43a047; color:white; }
@@ -73,7 +60,6 @@ svg {
 
 <body>
 <div class="layout">
-
 <div class="content">
 
 <h2>Risk Matrix</h2>
@@ -90,17 +76,10 @@ svg {
   </select>
 </div>
 
-<!-- ✅ Cards -->
 <div class="cards">
-  <div id="cardL" class="card gray">
-    <b>Likelihood</b><span>-</span>
-  </div>
-  <div id="cardI" class="card gray">
-    <b>Impact</b><span>-</span>
-  </div>
-  <div id="cardS" class="card gray">
-    <b>Risk Score (L×I)</b><span>-</span>
-  </div>
+  <div id="cardL" class="card gray"><b>Likelihood</b><span>-</span></div>
+  <div id="cardI" class="card gray"><b>Impact</b><span>-</span></div>
+  <div id="cardS" class="card gray"><b>Risk Score (L×I)</b><span>-</span></div>
 </div>
 
 <div id="title" class="matrix-title"></div>
@@ -128,7 +107,7 @@ svg {
 </div>
 
 <script>
-/* ===== Axis Meaning ===== */
+/* ================= Axis Meaning ================= */
 const axisMeaning = {
   RF1:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
         impact:"ไม่สามารถสร้างมูลค่าเพิ่มในธุรกิจหลักได้ตามเป้าหมาย"},
@@ -142,78 +121,44 @@ const axisMeaning = {
         impact:"ไม่สามารถพัฒนาทักษะดิจิทัล / AI ได้ตามเกณฑ์"},
   RF6:{ likelihood:"ความสำเร็จการดำเนินงานตามแผนงานบริหารความเสี่ยง",
         impact:"ไม่สามารถบริหารค่า SAIFI / SAIDI ได้ตามเป้าหมาย"},
-  
-"ย":{
-    likelihood:"ความสำเร็จของแผนตอบสนองปัจจัยเสี่ยง (Risk Response)",
-    impact:"ขยายผลใช้งานระบบที่นำเทคโนโลยี AI มาประยุกต์ใช้สามารถขยายผลใช้งานทั่วประเทศ"
-  },
-  "ธต":{
-    likelihood:"ดำเนินการตามแผนงาน/กิจกรรมที่เกี่ยวข้องกับการพัฒนาโมเดลธุรกิจ",
-    impact:"ผลการดำเนินงานด้านการพัฒนาโมเดลธุรกิจ เป็นไปตามแผน"
-  },
-  "วว1":{
-    likelihood:"ความสำเร็จของแผนตอบสนองปัจจัยเสี่ยง (Risk Response)",
-    impact:"มีผลกระทบต่อองค์กร"
-  },
-  "วว2":{
-    likelihood:"ความสำเร็จของแผนตอบสนองปัจจัยเสี่ยง (Risk Response)",
-    impact:"มีผลกระทบต่อองค์กร"
-  },
-  "ป":{
-    likelihood:"ดำเนินการตามแผน/กิจกรรม ควบคุมได้ครบถ้วน",
-    impact:"ค่าเกณฑ์วัด BSC"
-  },
-  "ดส1":{
-    likelihood:"ปัญหาระหว่างกระบวนการจัดซื้อจัดจ้างหรือผู้รับจ้างส่งงานไม่ตรงตามกำหนด",
-    impact:"เบิกจ่ายงบลงทุนได้ตามเป้าหมายที่กำหนด"
-  },
-  "ดส2":{
-    likelihood:"ความสำเร็จของแผนงาน/กิจกรรมควบคุม",
-    impact:"ผ่านการตรวจสอบช่องโหว่และแก้ไขของช่องโหว่"
-  },
-  "บ":{
-    likelihood:"การเบิกจ่ายงบลงทุน",
-    impact:"การเบิกจ่ายที่เกิดขึ้นจริงในช่วงปี"
-  },
-  "บก1":{
-    likelihood:"ดำเนินงานตามแผนได้ครบถ้วน",
-    impact:"ค่าดัชนีการประสบอุบัติภัย (Disabling Injury Index: DI)"
-  },
-  "บก2":{
-    likelihood:"สามารถทบทวนและสรุปแนวทางการจัดตั้งโครงการ PEA Academy",
-    impact:"ร้อยละโครงสร้างหน่วยงานสอดคล้องแผน HR"
-  },
-  "ล":{
-    likelihood:"พัสดุคงคลังไม่มีการเคลื่อนไหว",
-    impact:"ต้นทุนโลจิสติกส์สูง โอกาสเพิ่มประสิทธิภาพลดลง"
-  },
-  "น":{
-    likelihood:"ดำเนินงานตามแผนงานบริหารความเสี่ยง",
-    impact:"ค่าเป้าหมายแผน ผวก."
-  },
-  "ฉ":{
-    likelihood:"ความสำเร็จของแผนตอบสนองปัจจัยเสี่ยง (Risk Response)",
-    impact:"ร้อยละของการปิดงานก่อสร้าง (AUC)"
-  },
-  "ก":{
-    likelihood:"ความสำเร็จของแผนงานเพิ่มประสิทธิภาพการเบิกจ่ายงบลงทุน",
-    impact:"บริหารแผนลงทุนของสายงานเป็นไปตามเป้าหมาย"
-  },
-  "ต":{
-    likelihood:"ความสำเร็จของแผนบริหารสินทรัพย์",
-    impact:"บริหารแผนลงทุนภาคใต้เป็นไปตามเป้าหมาย"
-  },
-  "สตภ.":{
-    likelihood:"ดำเนินการตามแผน/กิจกรรมควบคุมได้ครบถ้วน",
-    impact:"สร้างมูลค่าเพิ่มด้านการให้ความเชื่อมั่นและการให้คำปรึกษา"
-  },
-  "ฝลอ.":{
-    likelihood:"โอกาสผู้บริหาร/พนักงานไม่เข้าใจระเบียบค่าใช้จ่ายเดินทางต่างประเทศ",
-    impact:"ความสำเร็จของแผนสื่อสารและเผยแพร่ความรู้"
-  }
 
+  "ย":{ likelihood:"ความสำเร็จของแผนตอบสนองปัจจัยเสี่ยง (Risk Response)",
+       impact:"ขยายผลใช้งานระบบที่นำ AI มาประยุกต์ใช้ได้ทั่วประเทศ"},
+  "ธต":{ likelihood:"ดำเนินการตามแผนพัฒนาโมเดลธุรกิจ",
+          impact:"ผลการพัฒนาโมเดลธุรกิจเป็นไปตามแผน"},
+  "วว1":{ likelihood:"ความสำเร็จของแผนตอบสนองปัจจัยเสี่ยง",
+           impact:"มีผลกระทบต่อองค์กร"},
+  "วว2":{ likelihood:"ความสำเร็จของแผนตอบสนองปัจจัยเสี่ยง",
+           impact:"มีผลกระทบต่อองค์กร"},
+  "ป":{ likelihood:"ดำเนินการตามแผนควบคุมได้ครบถ้วน",
+        impact:"ค่าเกณฑ์วัด BSC"},
+  "ดส1":{ likelihood:"ปัญหากระบวนการจัดซื้อจัดจ้าง",
+           impact:"เบิกจ่ายงบลงทุนได้ตามเป้า"},
+  "ดส2":{ likelihood:"ความสำเร็จแผนกิจกรรมควบคุม",
+           impact:"ผ่านการตรวจสอบช่องโหว่"},
+  "บ":{ likelihood:"การเบิกจ่ายงบลงทุน",
+        impact:"การเบิกจ่ายจริงในช่วงปี"},
+  "บก1":{ likelihood:"ดำเนินงานตามแผนครบถ้วน",
+          impact:"ค่าดัชนีการประสบอุบัติเหตุ (DI)"},
+  "บก2":{ likelihood:"ทบทวนโครงการ PEA Academy",
+          impact:"โครงสร้างหน่วยงานสอดคล้องแผน HR"},
+  "ล":{ likelihood:"พัสดุคงคลังไม่มีการเคลื่อนไหว",
+        impact:"ต้นทุนโลจิสติกส์สูง"},
+  "น":{ likelihood:"ดำเนินงานตามแผนบริหารความเสี่ยง",
+        impact:"ค่าเป้าหมายแผน ผวก."},
+  "ฉ":{ likelihood:"ความสำเร็จแผนตอบสนองความเสี่ยง",
+        impact:"ร้อยละการปิดงานก่อสร้าง (AUC)"},
+  "ก":{ likelihood:"เพิ่มประสิทธิภาพการเบิกจ่ายงบลงทุน",
+        impact:"บริหารแผนลงทุนได้ตามเป้า"},
+  "ต":{ likelihood:"บริหารสินทรัพย์และงบลงทุน",
+        impact:"แผนลงทุนภาคใต้ตามเป้าหมาย"},
+  "สตภ.":{ likelihood:"ควบคุมตามแผนครบถ้วน",
+            impact:"สร้างมูลค่าเพิ่มด้านการให้คำปรึกษา"},
+  "ฝลอ.":{ likelihood:"โอกาสไม่เข้าใจระเบียบเดินทาง ตปท.",
+            impact:"ความสำเร็จแผนสื่อสารความรู้"}
 };
 
+/* ================= Core Logic ================= */
 const sheetUrl =
 "https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=523652456";
 
@@ -231,37 +176,13 @@ const cardS = document.getElementById("cardS");
 const clamp = v => Math.min(5, Math.max(1, v));
 const riskLevel = s => s <= 4 ? "low" : s <= 14 ? "medium" : "high";
 
-/* ===== Cards ===== */
-function updateCards(d,q){
-  if(!hasQuarterData(d[q])){
-    [cardL,cardI,cardS].forEach(c=>{
-      c.className="card gray";
-      c.querySelector("span").textContent="-";
-    });
-    return;
-  }
-  const L = +d[q].L;
-  const I = +d[q].I;
-  const S = L * I;
-  const lvl = riskLevel(S);
-
-  cardL.className = "card " + lvl;
-  cardL.querySelector("span").textContent = L;
-
-  cardI.className = "card " + lvl;
-  cardI.querySelector("span").textContent = I;
-
-  cardS.className = "card " + lvl;
-  cardS.querySelector("span").textContent = S;
-}
-
 const hasQuarterData = q =>
-  q && q.L!=="" && q.I!=="" && !isNaN(q.L) && !isNaN(q.I);
+  q && q.L !== "" && q.I !== "" && !isNaN(q.L) && !isNaN(q.I);
 
 const pos = (L,I)=>({x:(clamp(L)-.5)*20,y:(5-clamp(I)+.5)*20});
 
-/* ===== Load Data ===== */
 let data=[];
+
 Papa.parse(sheetUrl,{
   download:true, header:true, skipEmptyLines:true,
   complete(res){
@@ -287,7 +208,8 @@ function drawMatrix(){
   svg.innerHTML = svg.innerHTML.split("</defs>")[0]+"</defs>";
   for(let y=5;y>=1;y--)for(let x=1;x<=5;x++){
     const c=document.createElement("div");
-    c.className="cell "+riskLevel(x*y); c.textContent=x*y;
+    c.className="cell "+riskLevel(x*y);
+    c.textContent=x*y;
     matrix.appendChild(c);
   }
 }
@@ -297,18 +219,17 @@ function render(){
   const rf=rfSel.value,q=qSel.value;
   title.textContent=`${q}/2569 | ${rf==="ALL"?"ALL RF":rf}`;
 
-  if(rf==="ALL"){
+  if(rf==="ALL" || !axisMeaning[rf]){
     axisBox.innerHTML =
-      "<b>Likelihood:</b> ความสำเร็จการดำเนินงานตามแผนบริหารความเสี่ยง<br>"+
-      "<b>Impact:</b> ผลกระทบต่อเป้าหมายเชิงยุทธศาสตร์องค์กร";
+      "<b>Likelihood:</b> ความสำเร็จของการบริหารความเสี่ยง<br>" +
+      "<b>Impact:</b> ผลกระทบต่อเป้าหมายองค์กร";
   } else {
     axisBox.innerHTML =
-      `<b>Likelihood:</b> ${axisMeaning[rf].likelihood}<br>`+
+      `<b>Likelihood:</b> ${axisMeaning[rf].likelihood}<br>` +
       `<b>Impact:</b> ${axisMeaning[rf].impact}`;
   }
 
   data.filter(d=>rf==="ALL"||d.rf===rf).forEach((d,i)=>{
-    updateCards(d,q);
     plot(d.pre.L,d.pre.I,'<div class="circle"></div>',i*4);
     plot(d.post.L,d.post.I,'<div class="triangle"></div>',i*4+6);
     if(hasQuarterData(d[q])){
@@ -332,14 +253,3 @@ function drawArrow(a,b){
 
 function plot(L,I,h,o){
   const p=document.createElement("div");
-  p.className="point"; p.innerHTML=h;
-  p.style.left=`calc(${(clamp(L)-.5)*20}% + ${o}px)`;
-  p.style.top=`calc(${(5-clamp(I)+.5)*20}% + ${o}px)`;
-  matrix.appendChild(p);
-}
-
-rfSel.onchange=render;
-qSel.onchange=render;
-</script>
-</body>
-</html>
