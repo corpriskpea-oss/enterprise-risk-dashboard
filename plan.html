@@ -5,6 +5,7 @@
 <title>Enterprise Risk Dashboard – v1.0.2 (Plan)</title>
 
 <link rel="stylesheet" href="styles.css">
+
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -18,7 +19,6 @@
 <style>
   body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
   .layout { display:flex; min-height:100vh; }
-  
   .content { flex:1; padding:24px; background:white; }
 
   table { width:100%; border-collapse:collapse; margin-top:12px; }
@@ -95,7 +95,6 @@ function App() {
 
   return (
     <div className="layout">
-      
       <div className="content">
         <h2>Plan Report</h2>
 
@@ -122,8 +121,6 @@ function App() {
                 <tr>
                   <th>แผนงาน</th>
                   <th>RF</th>
-                  <th>ผลการดำเนินงาน (%)</th>
-                  <th>เป้าหมาย</th>
                   <th>สถานะ</th>
                 </tr>
               </thead>
@@ -131,13 +128,13 @@ function App() {
                 {Object.entries(planGroups).map(([planName, items]) => {
                   const p = items[0];
                   return (
-                    <tr key={planName}
-                        style={{ cursor:"pointer" }}
-                        onClick={() => setSelectedPlan({ name: planName, items })}>
+                    <tr
+                      key={planName}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => setSelectedPlan({ name: planName, items })}
+                    >
                       <td>{planName}</td>
-                      <td style={{ textAlign:"center" }}>{p.RF_GroupName}</td>
-                      <td style={{ textAlign:"center" }}>{p.ResultPercent}</td>
-                      <td style={{ textAlign:"center" }}>{p.TargetLevel5}</td>
+                      <td style={{ textAlign: "center" }}>{p.RF_GroupName}</td>
                       <td>{p.Status_Combined}</td>
                     </tr>
                   );
@@ -160,9 +157,7 @@ function App() {
                 <button
                   key={q}
                   onClick={() => setQuarter(q)}
-                  style={{
-                    fontWeight: quarter === q ? "bold" : "normal"
-                  }}
+                  style={{ fontWeight: quarter === q ? "bold" : "normal" }}
                 >
                   {q}
                 </button>
@@ -183,7 +178,7 @@ function App() {
               <tbody>
                 {selectedPlan.items.map((a, i) => (
                   <tr key={i}>
-                    <td style={{ textAlign:"center" }}>{a.ActivityOrder}</td>
+                    <td style={{ textAlign: "center" }}>{a.ActivityOrder}</td>
                     <td>{a.ActivityName}</td>
                     <td>{a[detailKey]}</td>
                     <td>{a[problemKey]}</td>
