@@ -2,15 +2,13 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v2.06.1 (KRI)</title>
+<title>Enterprise Risk Dashboard – KRI FINAL</title>
 
 <link rel="stylesheet" href="styles.css">
+
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
-<!-- Babel -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <!-- PapaParse -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
@@ -18,16 +16,10 @@
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
 .layout { display:flex; min-height:100vh; }
-
 .content { flex:1; padding:24px; background:white; }
 
 .toolbar { margin-bottom:14px; display:flex; gap:12px; align-items:center; }
 select { padding:6px 10px; }
-
-.summary { display:flex; gap:12px; margin-bottom:16px; }
-.card { border-radius:8px; padding:12px 16px; min-width:180px; border:1px solid #e5e7eb; }
-.counts { display:flex; gap:10px; font-size:13px; }
-.green { color:#16a34a; } .yellow { color:#ca8a04; } .red { color:#dc2626; }
 
 table { width:100%; border-collapse:collapse; }
 th, td { border:1px solid #ddd; padding:8px; }
@@ -36,40 +28,35 @@ th { background:#e5e7eb; }
 .gauge { width:140px; height:80px; }
 .badge { padding:4px 8px; background:#e5e7eb; border-radius:6px; }
 </style>
+
 </head>
 
 <body>
 <div id="root"></div>
 
-<script type="text/babel">
-const toNum = v => Number(String(v).replace(/,/g,""));
+<script>
+const e = React.createElement;
+
+const toNum = v => Number(String(v || "").replace(/,/g,""));
 const isNum = v => !isNaN(toNum(v));
 
-function getRiskLevel(row){
-  const k=toNum(row.KRI_Status), ra=toNum(row.RA), rt=toNum(row.RT);
-  if(!isNum(k)||!isNum(ra)||!isNum(rt)) return null;
-
-  if(row.Direction==="LOW_GOOD"){
-    if(k<=ra) return "green";
-    if(k<rt) return "yellow";
-    return "red";
-  } else {
-    if(k<rt) return "red";
-    if(k<ra) return "yellow";
-    return "green";
-  }
-}
-
 function RiskMeter({kri,ra,rt,direction}){
-  if(!isNum(kri)||!isNum(ra)||!isNum(rt)) return <span className="badge">KRI เชิงคุณภาพ</span>;
-  const max=Math.max(kri,ra,rt)*1.1;
-  const ang=v=>Math.min(v/max*180,180);
-  const pol=a=>{
+
+  if(!isNum(kri)||!isNum(ra)||!isNum(rt)){
+    return e("span",{className:"badge"},"KRI เชิงคุณภาพ");
+  }
+
+  const max = Math.max(kri,ra,rt) * 1.1;
+
+  const ang = v => Math.min(v/max*180,180);
+
+  const pol = a => {
     const r=(a-180)*Math.PI/180;
     return {x:100+80*Math.cos(r),y:90+80*Math.sin(r)};
   };
 
   let zones;
+
   if(direction==="LOW_GOOD"){
     zones=[
       {from:0,to:ra,color:"#16a34a"},
@@ -84,88 +71,122 @@ function RiskMeter({kri,ra,rt,direction}){
     ];
   }
 
-  return (
-    <svg viewBox="0 0 200 120" className="gauge">
-      {zones.map((z,i)=>{
-        const p1=pol(ang(z.from)), p2=pol(ang(z.to));
-        return <path key={i}
-          d={`M${p1.x} ${p1.y} A80 80 0 0 1 ${p2.x} ${p2.y}`}
-          stroke={z.color} strokeWidth="16" fill="none"/>;
-      })}
-      <line x1="100" y1="90"
-            x2={pol(ang(kri)).x}
-            y2={pol(ang(kri)).y}
-            stroke="#111827" strokeWidth="3"/>
-      <circle cx="100" cy="90" r="4" fill="#111827"/>
-      <text x="100" y="115" textAnchor="middle" fontSize="12">{kri}</text>
-    </svg>
+  return e("svg",{viewBox:"0 0 200 120",className:"gauge"},
+
+    zones.map((z,i)=>{
+      const p1=pol(ang(z.from)), p2=pol(ang(z.to));
+      return e("path",{
+        key:i,
+        d:`M${p1.x} ${p1.y} A80 80 0 0 1 ${p2.x} ${p2.y}`,
+        stroke:z.color,
+        strokeWidth:"16",
+        fill:"none"
+      });
+    }),
+
+    e("line",{
+      x1:"100", y1:"90",
+      x2:pol(ang(kri)).x,
+      y2:pol(ang(kri)).y,
+      stroke:"#111827",
+      strokeWidth:"3"
+    }),
+
+    e("circle",{cx:"100",cy:"90",r:"4",fill:"#111827"}),
+
+    e("text",{x:"100",y:"115",textAnchor:"middle",fontSize:"12"}, String(kri))
   );
 }
 
 function App(){
-  const [rows,setRows]=React.useState([]);
-  const [rf,setRf]=React.useState("ALL");
-  const [m,setM]=React.useState("ALL");
+
+  const [rows,setRows] = React.useState([]);
+  const [rf,setRf] = React.useState("ALL");
+  const [m,setM] = React.useState("ALL");
 
   React.useEffect(()=>{
     fetch("https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339")
-      .then(r=>r.text()).then(csv=>{
-        setRows(Papa.parse(csv,{header:true}).data);
+      .then(r=>r.text())
+      .then(csv=>{
+        const parsed = Papa.parse(csv,{
+          header:true,
+          skipEmptyLines:true
+        });
+        setRows(parsed.data);
       });
   },[]);
 
-  const filtered=rows.filter(r=>
-    (rf==="ALL"||r.RF_GroupName===rf)&&(m==="ALL"||r.Month===m)
+  const rfList = ["ALL"].concat(
+    Array.from(new Set(rows.map(r=>r.RF_GroupName).filter(Boolean)))
   );
 
-  return (
-    <div className="layout">
-      
-      <div className="content">
-        <div className="toolbar">
-          RF:
-          <select value={rf} onChange={e=>setRf(e.target.value)}>
-            {["ALL",...new Set(rows.map(r=>r.RF_GroupName))].map(x=><option key={x}>{x}</option>)}
-          </select>
-          Month:
-          <select value={m} onChange={e=>setM(e.target.value)}>
-            {["ALL",...new Set(rows.map(r=>r.Month))].map(x=><option key={x}>{x}</option>)}
-          </select>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>RF</th><th>Month</th><th>KRI</th><th>Units</th>
-              <th>Status</th><th>RA</th><th>RT</th><th>Meter</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((r,i)=>
-              <tr key={i}>
-                <td>{r.RF_GroupName}</td>
-                <td>{r.Month}</td>
-                <td>{r.KRI_Name}</td>
-                <td>{r.Units}</td>
-                <td>{r.KRI_Status}</td>
-                <td>{r.RA}</td>
-                <td>{r.RT}</td>
-                <td>
-                  <RiskMeter
-                    kri={toNum(r.KRI_Status)}
-                    ra={toNum(r.RA)}
-                    rt={toNum(r.RT)}
-                    direction={r.Direction}/>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+  const mList = ["ALL"].concat(
+    Array.from(new Set(rows.map(r=>r.Month).filter(Boolean)))
+  );
+
+  const filtered = rows.filter(r =>
+    (rf==="ALL"||r.RF_GroupName===rf) &&
+    (m==="ALL"||r.Month===m)
+  );
+
+  return e("div",{className:"layout"},
+    e("div",{className:"content"},
+
+      e("div",{className:"toolbar"},
+        "RF:",
+        e("select",{value:rf,onChange:e2=>setRf(e2.target.value)},
+          rfList.map(x=>e("option",{key:x},x))
+        ),
+        "Month:",
+        e("select",{value:m,onChange:e2=>setM(e2.target.value)},
+          mList.map(x=>e("option",{key:x},x))
+        )
+      ),
+
+      e("table",null,
+        e("thead",null,
+          e("tr",null,
+            e("th",null,"RF"),
+            e("th",null,"Month"),
+            e("th",null,"KRI"),
+            e("th",null,"Units"),
+            e("th",null,"Status"),
+            e("th",null,"RA"),
+            e("th",null,"RT"),
+            e("th",null,"Meter")
+          )
+        ),
+        e("tbody",null,
+          filtered.map((r,i)=>
+            e("tr",{key:i},
+              e("td",null,r.RF_GroupName),
+              e("td",null,r.Month),
+              e("td",null,r.KRI_Name),
+              e("td",null,r.Units),
+              e("td",null,r.KRI_Status),
+              e("td",null,r.RA),
+              e("td",null,r.RT),
+              e("td",null,
+                e(RiskMeter,{
+                  kri:toNum(r.KRI_Status),
+                  ra:toNum(r.RA),
+                  rt:toNum(r.RT),
+                  direction:r.Direction
+                })
+              )
+            )
+          )
+        )
+      )
+
+    )
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+ReactDOM.createRoot(document.getElementById("root")).render(
+  e(App)
+);
 </script>
+
 </body>
 </html>
