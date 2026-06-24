@@ -28,21 +28,23 @@ th { background:#e5e7eb; }
 .gauge { width:140px; height:80px; }
 .badge { padding:4px 8px; background:#e5e7eb; border-radius:6px; }
 </style>
-
 </head>
 
 <body>
+
 <div id="root"></div>
 
 <script>
 const e = React.createElement;
 
+/* ================= Utils ================= */
 const toNum = v => Number(String(v || "").replace(/,/g,""));
 const isNum = v => !isNaN(toNum(v));
 
-function RiskMeter({kri,ra,rt,direction}){
+/* ================= Risk Meter ================= */
+function RiskMeter({kri, ra, rt, direction}) {
 
-  if(!isNum(kri)||!isNum(ra)||!isNum(rt)){
+  if(!isNum(kri) || !isNum(ra) || !isNum(rt)){
     return e("span",{className:"badge"},"KRI เชิงคุณภาพ");
   }
 
@@ -61,13 +63,13 @@ function RiskMeter({kri,ra,rt,direction}){
     zones=[
       {from:0,to:ra,color:"#16a34a"},
       {from:ra,to:rt,color:"#facc15"},
-      {from:rt,to:max,color:"#dc2626"},
+      {from:rt,to:max,color:"#dc2626"}
     ];
   } else {
     zones=[
       {from:0,to:rt,color:"#dc2626"},
       {from:rt,to:ra,color:"#facc15"},
-      {from:ra,to:max,color:"#16a34a"},
+      {from:ra,to:max,color:"#16a34a"}
     ];
   }
 
@@ -98,11 +100,13 @@ function RiskMeter({kri,ra,rt,direction}){
   );
 }
 
+
+/* ================= App ================= */
 function App(){
 
   const [rows,setRows] = React.useState([]);
   const [rf,setRf] = React.useState("ALL");
-  const [m,setM] = React.useState("ALL");
+  const [month,setMonth] = React.useState("ALL");
 
   React.useEffect(()=>{
     fetch("https://docs.google.com/spreadsheets/d/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/export?format=csv&gid=2142357339")
@@ -113,9 +117,11 @@ function App(){
           skipEmptyLines:true
         });
         setRows(parsed.data);
-      });
+      })
+      .catch(err=>console.error(err));
   },[]);
 
+  /* ---------- Filters ---------- */
   const rfList = ["ALL"].concat(
     Array.from(new Set(rows.map(r=>r.RF_GroupName).filter(Boolean)))
   );
@@ -126,9 +132,10 @@ function App(){
 
   const filtered = rows.filter(r =>
     (rf==="ALL"||r.RF_GroupName===rf) &&
-    (m==="ALL"||r.Month===m)
+    (month==="ALL"||r.Month===month)
   );
 
+  /* ================= UI ================= */
   return e("div",{className:"layout"},
     e("div",{className:"content"},
 
@@ -138,7 +145,7 @@ function App(){
           rfList.map(x=>e("option",{key:x},x))
         ),
         "Month:",
-        e("select",{value:m,onChange:e2=>setM(e2.target.value)},
+        e("select",{value:month,onChange:e2=>setMonth(e2.target.value)},
           mList.map(x=>e("option",{key:x},x))
         )
       ),
