@@ -40,6 +40,7 @@
 
 /* ==================== Data Hook ==================== */
 
+
 function usePlanData() {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -49,15 +50,15 @@ function usePlanData() {
     const sheetUrl =
       "https://opensheet.elk.sh/1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw/Plan";
 
-    fetch(sheetUrl)
-      .then(res => res.json())   // ✅ ต้องเป็น json
+    fetch(sheetUrl) // ✅ ใช้ตัวแปรให้ถูก
+      .then(res => res.json()) // ✅ ต้องเป็น json
       .then(data => {
         console.log("DATA:", data); // debug
         setRows(data);
         setLoading(false);
       })
       .catch(err => {
-        console.error(err);
+        console.error("ERROR:", err);
         setLoading(false);
       });
 
@@ -65,6 +66,7 @@ function usePlanData() {
 
   return { rows, loading };
 }
+
 
 
 /* ==================== App ==================== */
