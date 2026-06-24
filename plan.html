@@ -2,9 +2,14 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v1.0.2 (Plan)</title>
+<title>Enterprise Risk Dashboard – v1.0.3 (Plan FIX)</title>
 
 <link rel="stylesheet" href="styles.css">
+
+<!-- ✅ FIX: กัน Babel crash -->
+<script>
+window.process = { env: { NODE_ENV: "development" } };
+</script>
 
 <!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
