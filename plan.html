@@ -45,26 +45,19 @@ function usePlanData() {
 
   React.useEffect(() => {
     const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
-
-    // ✅ ใช้ opensheet แทน CSV (ไม่ต้อง login / ไม่ติด VPN)
-    const url = `https://opensheet.elk.sh/${sheetId}/Plan`;
+    const url =
+      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
 
     fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
-      })
-      .then(data => {
-        console.log("Plan data:", data); // debug
-        setRows(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("โหลดข้อมูลไม่สำเร็จ:", err);
-        setRows([]);
+      .then(res => res.text())
+      .then(csv => {
+        const parsed = Papa.parse(csv, {
+          header: true,
+          skipEmptyLines: true,
+        });
+        setRows(parsed.data);
         setLoading(false);
       });
-
   }, []);
 
   return { rows, loading };
