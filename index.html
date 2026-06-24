@@ -2,55 +2,96 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>Enterprise Risk Dashboard – v.final.1.00</title>
+  <title>Enterprise Risk Dashboard – v.final.1.01</title>
   <link rel="stylesheet" href="styles.css">
+
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
+
+    .layout { display:flex; height:100vh; }
+
+    .sidebar {
+      width:220px;
+      background:#0f172a;
+      color:white;
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .sidebar h3 { margin-bottom:12px; }
+
+    .sidebar button {
+      padding:10px;
+      border:none;
+      cursor:pointer;
+      background:#1e293b;
+      color:white;
+      border-radius:6px;
+      text-align:left;
+    }
+
+    .sidebar button.active {
+      background:#2563eb;
+    }
+
+    .content {
+      flex:1;
+      padding:16px;
+    }
+
+    iframe {
+      width:100%;
+      height:100%;
+      border:none;
+      border-radius:12px;
+      background:white;
+    }
+  </style>
 </head>
 
 <body>
+
 <div class="layout">
 
-  <!-- ================= Sidebar ================= -->
-<aside class="sidebar">
-  <h3>Enterprise Risk</h3>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h3>Enterprise Risk</h3>
 
-<button class="active" onclick="loadPage('plan.html', this)">
-  📋 Plan
-</button>
+    <button class="active" onclick="loadPage('plan.html', this)">📋 Plan</button>
+    <button onclick="loadPage('kri.html', this)">📊 KRI</button>
+    <button onclick="loadPage('matrix.html', this)">🟦 Risk Matrix</button>
+    <button onclick="loadPage('risk-response.html', this)">🔁 Risk Response</button>
+  </aside>
 
-<button onclick="loadPage('kri.html', this)">
-  📊 KRI
-</button>
+  <!-- Content -->
+  <main class="content">
 
-<button onclick="loadPage('matrix.html', this)">
-  🟦 Risk Matrix
-</button>
-
-<button onclick="loadPage('risk-response.html', this)">
-  🔁 Risk Response
-</button>
-
-</aside>
-
-  <!-- ================= Main Content ================= -->
-  <main class="content" style="display:flex; flex-direction:column;">
-
-    <!-- Iframe Area -->
+    <!-- ✅ FIX: ใส่ sandbox -->
     <iframe
       id="mainFrame"
       src="plan.html"
       sandbox="allow-scripts allow-same-origin"
-      style="flex:1; border-radius:12px;"
     ></iframe>
 
   </main>
 
 </div>
 
-<!-- ================= Script ================= -->
 <script>
 function loadPage(page, btn){
-  document.getElementById("mainFrame").src = page;
 
+  const frame = document.getElementById("mainFrame");
+
+  // ✅ reset iframe ก่อนโหลดใหม่ (กัน memory/Babel ชน)
+  frame.src = "about:blank";
+
+  setTimeout(() => {
+    frame.src = page;
+  }, 50);
+
+  // ✅ จัด active menu
   document.querySelectorAll(".sidebar button")
     .forEach(b => b.classList.remove("active"));
 
