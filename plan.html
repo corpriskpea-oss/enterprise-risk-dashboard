@@ -2,20 +2,16 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Enterprise Risk Dashboard – v1.0.3 (Plan FIX)</title>
+<title>Enterprise Risk Dashboard – Plan FINAL</title>
 
-<link rel="stylesheet" href="styles.css -->
-<script>
-window.process = { env: { NODE_ENV: "development" } };
-window.exports = {};
-window.require = () => {};
-</script>
+<link rel="stylesheet" href="styles.css">
 
-<!-- ✅ Libraries (ต้องอยู่นอก babel) -->
+<!-- React -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+<!-- PapaParse -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <style>
   body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
@@ -26,10 +22,7 @@ window.require = () => {};
   th, td { border:1px solid #ddd; padding:8px; vertical-align:top; }
   th { background:#e5e7eb; text-align:center; }
 
-  select, button {
-    padding:6px 10px; margin-right:8px;
-  }
-
+  select, button { padding:6px 10px; margin-right:8px; }
   .toolbar { margin-bottom:12px; }
 </style>
 
@@ -39,9 +32,10 @@ window.require = () => {};
 
 <div id="root"></div>
 
-<!-- ✅ Babel script (มีเฉพาะ JS/JSX เท่านั้น) -->
-<script type="text/babel" data-presets="env,react">
+<script>
+const e = React.createElement;
 
+/* ==================== Data Hook ==================== */
 function usePlanData() {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -50,7 +44,8 @@ function usePlanData() {
     const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
 
     const url =
-      `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
+      "https://docs.google.com/spreadsheets/d/" + sheetId +
+      "/export?format=csv&sheet=Plan";
 
     fetch(url)
       .then(res => res.text())
@@ -59,6 +54,7 @@ function usePlanData() {
           header: true,
           skipEmptyLines: true,
         });
+
         setRows(parsed.data);
         setLoading(false);
       })
@@ -72,6 +68,7 @@ function usePlanData() {
   return { rows, loading };
 }
 
+/* ==================== App ==================== */
 function App() {
   const { rows, loading } = usePlanData();
 
@@ -80,8 +77,8 @@ function App() {
   const [quarter, setQuarter] = React.useState("Q1");
 
   const rfList = React.useMemo(() => {
-    const set = new Set(rows.map(r => r.RF_GroupName));
-    return ["ALL", ...Array.from(set)];
+    const setRF = new Set(rows.map(r => r.RF_GroupName));
+    return ["ALL"].concat(Array.from(setRF));
   }, [rows]);
 
   const planGroups = React.useMemo(() => {
@@ -94,109 +91,114 @@ function App() {
     return map;
   }, [rows, rfFilter]);
 
-  const detailKey = `${quarter}_Detail`;
-  const problemKey = `${quarter}_Problem`;
-  const solutionKey = `${quarter}_Solution`;
+  const detailKey = quarter + "_Detail";
+  const problemKey = quarter + "_Problem";
+  const solutionKey = quarter + "_Solution";
 
-  return (
-    <div className="layout">
-      <div className="content">
-        <h2>Plan Report</h2>
+  /* ==================== UI ==================== */
 
-        {loading && <p>กำลังโหลดข้อมูล…</p>}
+  if (loading) {
+    return e("div", { className:"layout" },
+      e("div", { className:"content" }, "กำลังโหลดข้อมูล…")
+    );
+  }
 
-        {!loading && !selectedPlan && (
-          <>
-            <div className="toolbar">
-              <label>RF Group: </label>
-              <select
-                value={rfFilter}
-                onChange={e => setRfFilter(e.target.value)}
-              >
-                {rfList.map(rf => (
-                  <option key={rf}>{rf}</option>
-                ))}
-              </select>
-            </div>
+  if (!selectedPlan) {
+    return e("div", { className:"layout" },
+      e("div", { className:"content" },
 
-            <table>
-              <thead>
-                <tr>
-                  <th>แผนงาน</th>
-                  <th>RF</th>
-                  <th>สถานะ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(planGroups).map(([planName, items]) => {
-                  const p = items[0];
-                  return (
-                    <tr
-                      key={planName}
-                      style={{ cursor: "pointer" }}
-                      onClick={() => setSelectedPlan({ name: planName, items })}
-                    >
-                      <td>{planName}</td>
-                      <td style={{ textAlign: "center" }}>{p.RF_GroupName}</td>
-                      <td>{p.Status_Combined}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </>
-        )}
+        e("h2", null, "Plan Report"),
 
-        {selectedPlan && (
-          <>
-            <button onClick={() => setSelectedPlan(null)}>← กลับ</button>
-            <h3>{selectedPlan.name}</h3>
+        e("div", { className:"toolbar" },
+          "RF Group: ",
+          e("select", {
+            value: rfFilter,
+            onChange: (ev) => setRfFilter(ev.target.value)
+          },
+            rfList.map(rf =>
+              e("option", { key: rf }, rf)
+            )
+          )
+        ),
 
-            <div className="toolbar">
-              <label>ไตรมาส: </label>
-              {["Q1","Q2","Q3","Q4"].map(q => (
-                <button
-                  key={q}
-                  onClick={() => setQuarter(q)}
-                  style={{ fontWeight: quarter === q ? "bold" : "normal" }}
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
+        e("table", null,
+          e("thead", null,
+            e("tr", null,
+              e("th", null, "แผนงาน"),
+              e("th", null, "RF"),
+              e("th", null, "สถานะ")
+            )
+          ),
+          e("tbody", null,
+            Object.entries(planGroups).map(([planName, items]) => {
+              const p = items[0];
+              return e("tr", {
+                  key: planName,
+                  style: { cursor:"pointer" },
+                  onClick: () => setSelectedPlan({ name: planName, items })
+                },
+                e("td", null, planName),
+                e("td", { style:{ textAlign:"center" } }, p.RF_GroupName),
+                e("td", null, p.Status_Combined)
+              );
+            })
+          )
+        )
 
-            <table>
-              <thead>
-                <tr>
-                  <th>ลำดับ</th>
-                  <th>กิจกรรม</th>
-                  <th>รายละเอียด</th>
-                  <th>ปัญหา</th>
-                  <th>แนวทางแก้ไข</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedPlan.items.map((a, i) => (
-                  <tr key={i}>
-                    <td>{a.ActivityOrder}</td>
-                    <td>{a.ActivityName}</td>
-                    <td>{a[detailKey]}</td>
-                    <td>{a[problemKey]}</td>
-                    <td>{a[solutionKey]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
+      )
+    );
+  }
 
-      </div>
-    </div>
+  /* ================= Drill-down ================= */
+
+  return e("div", { className:"layout" },
+    e("div", { className:"content" },
+
+      e("button", { onClick: () => setSelectedPlan(null) }, "← กลับ"),
+
+      e("h3", null, selectedPlan.name),
+
+      e("div", { className:"toolbar" },
+        "ไตรมาส: ",
+        ["Q1","Q2","Q3","Q4"].map(q =>
+          e("button", {
+            key:q,
+            onClick: () => setQuarter(q),
+            style: { fontWeight: quarter===q ? "bold" : "normal" }
+          }, q)
+        )
+      ),
+
+      e("table", null,
+        e("thead", null,
+          e("tr", null,
+            e("th", null, "ลำดับ"),
+            e("th", null, "กิจกรรม"),
+            e("th", null, "รายละเอียด"),
+            e("th", null, "ปัญหา"),
+            e("th", null, "แนวทาง")
+          )
+        ),
+        e("tbody", null,
+          selectedPlan.items.map((a, i) =>
+            e("tr", { key:i },
+              e("td", null, a.ActivityOrder),
+              e("td", null, a.ActivityName),
+              e("td", null, a[detailKey]),
+              e("td", null, a[problemKey]),
+              e("td", null, a[solutionKey])
+            )
+          )
+        )
+      )
+
+    )
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-
+ReactDOM.createRoot(document.getElementById("root")).render(
+  e(App)
+);
 </script>
 
 </body>
