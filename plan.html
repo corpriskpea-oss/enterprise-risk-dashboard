@@ -4,22 +4,18 @@
 <meta charset="UTF-8" />
 <title>Enterprise Risk Dashboard – v1.0.3 (Plan FIX)</title>
 
-<link rel="stylesheet" href="styles.css">
-
-<!-- ✅ FIX: กัน Babel crash -->
+<link rel="stylesheet" href="styles.css -->
 <script>
 window.process = { env: { NODE_ENV: "development" } };
+window.exports = {};
+window.require = () => {};
 </script>
 
-<!-- React -->
+<!-- ✅ Libraries (ต้องอยู่นอก babel) -->
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
-<!-- Babel -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-<!-- PapaParse -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <style>
   body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; }
@@ -36,22 +32,23 @@ window.process = { env: { NODE_ENV: "development" } };
 
   .toolbar { margin-bottom:12px; }
 </style>
+
 </head>
 
 <body>
+
 <div id="root"></div>
 
-<script type="text/babel">
+<!-- ✅ Babel script (มีเฉพาะ JS/JSX เท่านั้น) -->
+<script type="text/babel" data-presets="env,react">
 
-/* ==================== Data Hook ==================== */
-
-/* ==================== Data Hook ==================== */
 function usePlanData() {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const sheetId = "1J5MfU5JTDEazsGPEesa7u2oR-wRPI4wr8e5APKglEyw";
+
     const url =
       `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=Plan`;
 
@@ -64,14 +61,17 @@ function usePlanData() {
         });
         setRows(parsed.data);
         setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
       });
+
   }, []);
 
   return { rows, loading };
 }
 
-
-/* ==================== App ==================== */
 function App() {
   const { rows, loading } = usePlanData();
 
@@ -79,13 +79,11 @@ function App() {
   const [selectedPlan, setSelectedPlan] = React.useState(null);
   const [quarter, setQuarter] = React.useState("Q1");
 
-  /* ---------- RF list ---------- */
   const rfList = React.useMemo(() => {
     const set = new Set(rows.map(r => r.RF_GroupName));
     return ["ALL", ...Array.from(set)];
   }, [rows]);
 
-  /* ---------- Group by Plan ---------- */
   const planGroups = React.useMemo(() => {
     const map = {};
     rows.forEach(r => {
@@ -96,7 +94,6 @@ function App() {
     return map;
   }, [rows, rfFilter]);
 
-  /* ---------- Quarter field names ---------- */
   const detailKey = `${quarter}_Detail`;
   const problemKey = `${quarter}_Problem`;
   const solutionKey = `${quarter}_Solution`;
@@ -110,7 +107,6 @@ function App() {
 
         {!loading && !selectedPlan && (
           <>
-            {/* ---------- RF Filter ---------- */}
             <div className="toolbar">
               <label>RF Group: </label>
               <select
@@ -118,12 +114,11 @@ function App() {
                 onChange={e => setRfFilter(e.target.value)}
               >
                 {rfList.map(rf => (
-                  <option key={rf} value={rf}>{rf}</option>
+                  <option key={rf}>{rf}</option>
                 ))}
               </select>
             </div>
 
-            {/* ---------- Plan Summary Table ---------- */}
             <table>
               <thead>
                 <tr>
@@ -152,13 +147,11 @@ function App() {
           </>
         )}
 
-        {/* ==================== Drill-down ==================== */}
         {selectedPlan && (
           <>
             <button onClick={() => setSelectedPlan(null)}>← กลับ</button>
             <h3>{selectedPlan.name}</h3>
 
-            {/* Quarter Filter */}
             <div className="toolbar">
               <label>ไตรมาส: </label>
               {["Q1","Q2","Q3","Q4"].map(q => (
@@ -172,21 +165,20 @@ function App() {
               ))}
             </div>
 
-            {/* Activity Table */}
             <table>
               <thead>
                 <tr>
                   <th>ลำดับ</th>
                   <th>กิจกรรม</th>
                   <th>รายละเอียด</th>
-                  <th>ปัญหา / อุปสรรค</th>
-                  <th>แนวทางการแก้ไข</th>
+                  <th>ปัญหา</th>
+                  <th>แนวทางแก้ไข</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedPlan.items.map((a, i) => (
                   <tr key={i}>
-                    <td style={{ textAlign: "center" }}>{a.ActivityOrder}</td>
+                    <td>{a.ActivityOrder}</td>
                     <td>{a.ActivityName}</td>
                     <td>{a[detailKey]}</td>
                     <td>{a[problemKey]}</td>
@@ -197,6 +189,7 @@ function App() {
             </table>
           </>
         )}
+
       </div>
     </div>
   );
@@ -205,5 +198,6 @@ function App() {
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 
 </script>
+
 </body>
 </html>
